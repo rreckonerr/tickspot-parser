@@ -7,7 +7,8 @@ exports.config = void 0;
 const config = {
   secrets: {
     sourceLogin: process.env.SOURCE_LOGIN,
-    sourcePassword: process.env.SOURCE_PASSWORD
+    sourcePassword: process.env.SOURCE_PASSWORD,
+    sourceUserAgent: process.env.SOURCE_USER_AGENT
   }
 };
 exports.config = config;
