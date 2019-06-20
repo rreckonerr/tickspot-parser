@@ -11,8 +11,9 @@ const baseConfig = {
   isTest: env === 'testing',
   port: 3000,
   secrets: {
-    sourceLogin: process.env.SOURCE_LOGIN,
-    sourcePassword: process.env.SOURCE_PASSWORD
+    sourceLogin: '',
+    sourcePassword: '',
+    sourceUserAgent: ''
   }
 };
 
