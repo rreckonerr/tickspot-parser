@@ -102,7 +102,7 @@ class TickApi {
   async getAllEntries(fromDate) {
     if (!this.projects) {
       try {
-        await this.getProjects();
+        await this.getAllProjects();
       } catch (error) {
         console.error(`Failed to init projects`);
         return [error];

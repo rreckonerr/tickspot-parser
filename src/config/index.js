@@ -13,7 +13,11 @@ const baseConfig = {
   secrets: {
     sourceLogin: '',
     sourcePassword: '',
-    sourceUserAgent: ''
+    sourceUserAgent: '',
+
+    targetLogin: '',
+    targetPassword: '',
+    targetUserAgent: ''
   }
 };
 
