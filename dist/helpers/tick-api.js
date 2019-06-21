@@ -17,7 +17,7 @@ class TickApi {
     this.user = '';
     this.pass = '';
     this.agent = '';
-    this.roles = [];
+    this.roles = null;
     this.projects = null;
   }
 
@@ -70,9 +70,7 @@ class TickApi {
       } = projectsArr[0];
       const {
         api_token
-      } = this.roles.find(({
-        subscription_id: role_id
-      }) => subscription_id == role_id);
+      } = this.roles[subscription_id];
       const options = {
         subscription_id,
         project_id: id,
@@ -134,15 +132,17 @@ class TickApi {
 
   async *projectsGen() {
     let i = 0;
+    const roles = Object.entries(this.roles);
 
-    while (i < this.roles.length) {
+    while (i < roles.length) {
+      const [, role] = roles[i];
       const {
         subscription_id,
         company
-      } = this.roles[i];
+      } = role;
 
       try {
-        yield [subscription_id, await this.getProject(this.roles[i])];
+        yield [subscription_id, await this.getProject(role)];
       } catch (error) {
         console.error(`Failed to get projects for ${company}`, error.message || error);
         return [undefined, undefined];
@@ -186,10 +186,14 @@ class TickApi {
         },
         json: true
       };
-      return await this.getRequest(options);
+      const roles = await this.getRequest(options);
+      return roles.reduce((acc, val) => {
+        acc[val.subscription_id] = val;
+        return acc;
+      }, {});
     } catch (error) {
       console.error(`Failed to authorize`, error.message || error);
-      return [];
+      return {};
     }
   }
 
