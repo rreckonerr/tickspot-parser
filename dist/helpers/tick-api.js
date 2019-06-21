@@ -19,6 +19,7 @@ class TickApi {
     this.agent = '';
     this.roles = null;
     this.projects = null;
+    this.entries = null;
   }
 
   async init(user = '', pass = '', agent = '') {
@@ -75,6 +76,7 @@ class TickApi {
       }
     }
 
+    this.entries = result;
     return [null, result];
   }
 
@@ -133,7 +135,7 @@ class TickApi {
     }
   }
 
-  async getProjects() {
+  async getAllProjects() {
     try {
       let projects = {};
 
