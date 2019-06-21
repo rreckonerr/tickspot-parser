@@ -9,9 +9,10 @@ class TickApi {
     this.user = '';
     this.pass = '';
     this.agent = '';
-    this.roles = [];
 
+    this.roles = null;
     this.projects = null;
+    this.entries = null;
   }
 
   async init(user = '', pass = '', agent = '') {
@@ -34,48 +35,134 @@ class TickApi {
     }
   }
 
-  async getEntries(fromDate) {
-    if (!this.projects) {
-      await this.getProjects();
-    }
+  // TODO: refactor to return [ [subscription_id, { user_id: user }] ]
+  async getAllUsers() {
+    try {
+      let users = {};
 
-    let entries = {};
-    for await (let entriesKeyVal of this.entriesGen(fromDate)) {
-      const [project_id, entriesArr] = entriesKeyVal;
-      entries[project_id] = entriesArr;
-    }
+      for await (let usersRaw of this.usersGen()) {
+        usersRaw.forEach(userRaw => {
+          users[userRaw.id] = userRaw;
+        });
+      }
 
-    return [null, entries];
+      this.users = users;
+      return [null, users];
+    } catch (error) {
+      console.error(`Failed to get all users`, error.messsage || error);
+      return [error.message || error];
+    }
   }
 
-  async *entriesGen(from_date) {
+  async *usersGen() {
     let i = 0;
-    const projectKeyValArr = Object.entries(this.projects);
-    while (i < projectKeyValArr.length) {
-      // TODO: refactor for forEach
-      const [subscription_id, projectsArr] = projectKeyValArr[0];
-      console.log('---ke-val', projectKeyValArr);
+    const roles = Object.values(this.roles);
 
-      // TODO: refactor for forEach
-      const { id, name } = projectsArr[0];
-      const { api_token } = this.roles.find(
-        ({ subscription_id: role_id }) => subscription_id == role_id
-      );
+    while (i < roles.length) {
+      const role = roles[i];
+      const { subscription_id, api_token } = role;
 
       const options = {
         subscription_id,
-        project_id: id,
+        api_token
+      };
+
+      try {
+        yield await this.getUsers(options);
+      } catch (error) {
+        console.error(`Failed to get users`, error.message || error);
+        yield [];
+      } finally {
+        i++;
+      }
+    }
+  }
+
+  async getUsers({ subscription_id, api_token }) {
+    try {
+      const options = {
+        url: `${this.apiRoot}/${subscription_id}/${this.apiName}/users.json`,
+        headers: {
+          Authorization: `Token token=${api_token}`,
+          'User-Agent': this.agent
+        },
+        json: true
+      };
+
+      const users = await this.getRequest(options);
+
+      return users;
+    } catch (error) {
+      console.error(`Failed to fetch users`);
+      return [];
+    }
+  }
+
+  // returns [ [ subscrition_id, { project_id: [entries] } ] ]
+  async getAllEntries(fromDate) {
+    if (!this.projects) {
+      try {
+        await this.getProjects();
+      } catch (error) {
+        console.error(`Failed to init projects`);
+        return [error];
+      }
+    }
+
+    let i = 0;
+    const roles = Object.values(this.roles);
+    let result = [];
+
+    while (i < roles.length) {
+      let entries = {};
+      const { subscription_id } = roles[i];
+
+      try {
+        for await (let entriesKeyVal of this.entriesGen(
+          subscription_id,
+          fromDate
+        )) {
+          const [project_id, entriesArr] = entriesKeyVal;
+          entries[project_id] = entriesArr;
+        }
+
+        result.push([subscription_id, entries]);
+      } catch (error) {
+        console.error(
+          `Failed to get entries for ${this.roles[subscription_id].company}`
+        );
+      } finally {
+        i++;
+      }
+    }
+
+    this.entries = result;
+    return [null, result];
+  }
+
+  async *entriesGen(subscription_id, from_date) {
+    let i = 0;
+    const projects = this.projects[subscription_id];
+
+    while (i < projects.length) {
+      const { id: project_id, name } = projects[i];
+      const { api_token } = this.roles[subscription_id];
+
+      const options = {
+        subscription_id,
+        project_id,
         api_token,
         from_date
       };
+
       try {
-        yield [id, await this.getEntry(options)];
+        yield [project_id, await this.getEntry(options)];
       } catch (error) {
         console.error(
-          `Failed to get entries for ${name}`,
+          `Failed to load entries for ${name}`,
           error.message || error
         );
-        return [undefined, undefined];
+        yield [undefined, undefined];
       } finally {
         i++;
       }
@@ -101,7 +188,8 @@ class TickApi {
     }
   }
 
-  async getProjects() {
+  // TODO: refactor to return [[subscription_id, {project_id: project}]]
+  async getAllProjects() {
     try {
       let projects = {};
 
@@ -120,10 +208,12 @@ class TickApi {
 
   async *projectsGen() {
     let i = 0;
-    while (i < this.roles.length) {
-      const { subscription_id, company } = this.roles[i];
+    const roles = Object.entries(this.roles);
+    while (i < roles.length) {
+      const [, role] = roles[i];
+      const { subscription_id, company } = role;
       try {
-        yield [subscription_id, await this.getProject(this.roles[i])];
+        yield [subscription_id, await this.getProject(role)];
       } catch (error) {
         console.error(
           `Failed to get projects for ${company}`,
@@ -170,10 +260,16 @@ class TickApi {
         json: true
       };
 
-      return await this.getRequest(options);
+      const roles = await this.getRequest(options);
+
+      return roles.reduce((acc, val) => {
+        acc[val.subscription_id] = val;
+
+        return acc;
+      }, {});
     } catch (error) {
       console.error(`Failed to authorize`, error.message || error);
-      return [];
+      return {};
     }
   }
 

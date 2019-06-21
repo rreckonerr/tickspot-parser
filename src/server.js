@@ -14,19 +14,31 @@ const init = async () => {
 
   console.log('---roles-available', roles);
 
-  const [err1, projects] = await TickSource.getProjects();
+  const [err1, projects] = await TickSource.getAllProjects();
   if (err1) console.error(`Tatata`, err1.message || err1);
 
   console.log('---projects-available', projects);
 
   const fromDate = '2019-06-01';
 
-  // TODO: refactor to return  [ subscrition_id, { project_id: [entries] } ]
-  // TODO: currently it's { project_id: [entries] }
-  const [err2, entries] = await TickSource.getEntries(fromDate);
+  const [err2, entries] = await TickSource.getAllEntries(fromDate);
   if (err2) console.error(`Atata`, err2.message || err2);
 
-  console.log('---entries', entries);
+  // console.log('---entries', entries);
+
+  entries.forEach(([, entryKeyVal]) => {
+    Object.entries(entryKeyVal).forEach(([proj_id, entries]) => {
+      console.log('---id', proj_id);
+      entries.forEach(entry => {
+        console.log('---entry', entry);
+      });
+    });
+  });
+
+  const [err3, users] = await TickSource.getAllUsers();
+  if (err3) console.error('Naaah', err3.message || err3);
+
+  console.log('---users', users);
 };
 
 export default init;
