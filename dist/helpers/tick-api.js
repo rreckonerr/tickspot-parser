@@ -38,51 +38,71 @@ class TickApi {
       console.error('Failed to init', error.message || error);
       return [error];
     }
-  }
+  } // returns [ [ subscrition_id, { project_id: [entries] } ] ]
 
-  async getEntries(fromDate) {
+
+  async getAllEntries(fromDate) {
     if (!this.projects) {
-      await this.getProjects();
+      try {
+        await this.getProjects();
+      } catch (error) {
+        console.error(`Failed to init projects`);
+        return [error];
+      }
     }
 
-    let entries = {};
+    let i = 0;
+    const roles = Object.values(this.roles);
+    let result = [];
 
-    for await (let entriesKeyVal of this.entriesGen(fromDate)) {
-      const [project_id, entriesArr] = entriesKeyVal;
-      entries[project_id] = entriesArr;
+    while (i < roles.length) {
+      let entries = {};
+      const {
+        subscription_id
+      } = roles[i];
+
+      try {
+        for await (let entriesKeyVal of this.entriesGen(subscription_id, fromDate)) {
+          const [project_id, entriesArr] = entriesKeyVal;
+          entries[project_id] = entriesArr;
+        }
+
+        result.push([subscription_id, entries]);
+      } catch (error) {
+        console.error(`Failed to get entries for ${this.roles[subscription_id].company}`);
+      } finally {
+        i++;
+      }
     }
 
-    return [null, entries];
+    return [null, result];
   }
 
-  async *entriesGen(from_date) {
+  async *entriesGen(subscription_id, from_date) {
     let i = 0;
-    const projectKeyValArr = Object.entries(this.projects);
+    const projects = this.projects[subscription_id];
+    console.log('---projects', projects);
 
-    while (i < projectKeyValArr.length) {
-      // TODO: refactor for forEach
-      const [subscription_id, projectsArr] = projectKeyValArr[0];
-      console.log('---ke-val', projectKeyValArr); // TODO: refactor for forEach
-
+    while (i < projects.length) {
       const {
-        id,
+        id: project_id,
         name
-      } = projectsArr[0];
+      } = projects[i];
       const {
         api_token
       } = this.roles[subscription_id];
       const options = {
         subscription_id,
-        project_id: id,
+        project_id,
         api_token,
         from_date
       };
 
       try {
-        yield [id, await this.getEntry(options)];
+        yield [project_id, await this.getEntry(options)];
       } catch (error) {
-        console.error(`Failed to get entries for ${name}`, error.message || error);
-        return [undefined, undefined];
+        console.error(`Failed to load entries for ${name}`, error.message || error);
+        yield [undefined, undefined];
       } finally {
         i++;
       }

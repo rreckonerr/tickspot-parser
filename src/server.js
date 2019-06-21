@@ -23,7 +23,7 @@ const init = async () => {
 
   // TODO: refactor to return  [ subscrition_id, { project_id: [entries] } ]
   // TODO: currently it's { project_id: [entries] }
-  const [err2, entries] = await TickSource.getEntries(fromDate);
+  const [err2, entries] = await TickSource.getAllEntries(fromDate);
   if (err2) console.error(`Atata`, err2.message || err2);
 
   console.log('---entries', entries);
