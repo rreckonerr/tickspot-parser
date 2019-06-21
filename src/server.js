@@ -1,8 +1,9 @@
 import config from './config';
-import { TickSource, TickTarget } from './helpers';
+import { TickSource, TickTarget, logger } from './helpers';
 
 // TODO: add logger
 const init = async () => {
+  logger.info('Starting the app 2!');
   const { sourceLogin, sourcePassword, sourceUserAgent } = config.secrets;
   const { targetLogin, targetPassword, targetUserAgent } = config.secrets;
 
