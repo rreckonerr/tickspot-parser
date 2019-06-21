@@ -35,6 +35,69 @@ class TickApi {
     }
   }
 
+  // TODO: refactor to return [ [subscription_id, { user_id: user }] ]
+  async getAllUsers() {
+    try {
+      let users = {};
+
+      for await (let usersRaw of this.usersGen()) {
+        usersRaw.forEach(userRaw => {
+          users[userRaw.id] = userRaw;
+        });
+      }
+
+      this.users = users;
+      return [null, users];
+    } catch (error) {
+      console.error(`Failed to get all users`, error.messsage || error);
+      return [error.message || error];
+    }
+  }
+
+  async *usersGen() {
+    let i = 0;
+    const roles = Object.values(this.roles);
+
+    while (i < roles.length) {
+      const role = roles[i];
+      const { subscription_id, api_token } = role;
+
+      const options = {
+        subscription_id,
+        api_token
+      };
+
+      try {
+        yield await this.getUsers(options);
+      } catch (error) {
+        console.error(`Failed to get users`, error.message || error);
+        yield [];
+      } finally {
+        i++;
+      }
+    }
+  }
+
+  async getUsers({ subscription_id, api_token }) {
+    try {
+      const options = {
+        url: `${this.apiRoot}/${subscription_id}/${this.apiName}/users.json`,
+        headers: {
+          Authorization: `Token token=${api_token}`,
+          'User-Agent': this.agent
+        },
+        json: true
+      };
+
+      const users = await this.getRequest(options);
+
+      return users;
+    } catch (error) {
+      console.error(`Failed to fetch users`);
+      return [];
+    }
+  }
+
   // returns [ [ subscrition_id, { project_id: [entries] } ] ]
   async getAllEntries(fromDate) {
     if (!this.projects) {
@@ -80,7 +143,6 @@ class TickApi {
   async *entriesGen(subscription_id, from_date) {
     let i = 0;
     const projects = this.projects[subscription_id];
-    console.log('---projects', projects);
 
     while (i < projects.length) {
       const { id: project_id, name } = projects[i];
@@ -126,6 +188,7 @@ class TickApi {
     }
   }
 
+  // TODO: refactor to return [[subscription_id, {project_id: project}]]
   async getAllProjects() {
     try {
       let projects = {};

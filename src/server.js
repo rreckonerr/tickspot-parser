@@ -34,6 +34,11 @@ const init = async () => {
       });
     });
   });
+
+  const [err3, users] = await TickSource.getAllUsers();
+  if (err3) console.error('Naaah', err3.message || err3);
+
+  console.log('---users', users);
 };
 
 export default init;
