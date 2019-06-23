@@ -1,4 +1,5 @@
 import request from 'request-promise';
+import { logger } from '../helpers';
 
 class TickApi {
   constructor() {
@@ -27,7 +28,12 @@ class TickApi {
       this.agent = agent;
 
       this.roles = await this.authorize();
-      console.log('---init-success', this.roles);
+      // console.log('---init-success', this.roles);
+      logger.info(
+        `TickApi for ${user} is ready and has ${
+          Object.keys(this.roles).length
+        } roles.`
+      );
       return [null, this.roles];
     } catch (error) {
       console.error('Failed to init', error.message || error);
@@ -47,6 +53,10 @@ class TickApi {
       }
 
       this.users = users;
+
+      logger.info(
+        `${this.user} has ${Object.keys(users).length} users available.`
+      );
       return [null, users];
     } catch (error) {
       console.error(`Failed to get all users`, error.messsage || error);
@@ -137,6 +147,7 @@ class TickApi {
     }
 
     this.entries = result;
+    logger.info(`Successfully downloaded entries for ${this.user}.`);
     return [null, result];
   }
 
@@ -199,6 +210,7 @@ class TickApi {
       }
 
       this.projects = projects;
+      logger.info(`Successfully downloaded projects fro ${this.user}.`);
       return [null, projects];
     } catch (error) {
       console.error(`Ooops`, error.message || error);

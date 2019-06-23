@@ -1,26 +1,32 @@
-import winston from 'winston';
+import { addColors, createLogger, transports, format } from 'winston';
 
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  defaultMeta: { service: 'user-service' },
-  transports: [
-    new winston.transports.File({ filename: 'error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'combined.log' }),
-    new winston.transports.Console()
-  ],
-  format: winston.format.combine(
-    winston.format.colorize({ all: true }),
-    winston.format.simple()
-  )
+addColors({
+  error: 'inverse red',
+  warn: 'inverse yellow',
+  info: 'inverse bold green',
+  verbose: 'inverse blue',
+  debug: 'inverse white',
+  silly: 'bold gray'
 });
 
-// if (process.env.NODE_ENV !== 'production') {
-//   logger.add(
-//     new winston.transports.Console({
-//       format: winston.format.simple()
-//     })
-//   );
-// }
+const logger = createLogger({
+  level: 'info',
+  levels: {
+    error: 0,
+    warn: 1,
+    info: 2,
+    verbose: 3,
+    debug: 4,
+    silly: 5
+  },
+  format: format.combine(format.simple()),
+  transports: [
+    new transports.Console({
+      format: format.combine(format.colorize({ all: true }))
+    }),
+    new transports.File({ filename: 'error.log', level: 'error' }),
+    new transports.File({ filename: 'combined.log' })
+  ]
+});
 
 export default logger;
