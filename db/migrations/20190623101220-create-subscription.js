@@ -4,15 +4,16 @@ module.exports = {
     return queryInterface.createTable('Subscriptions', {
       id: {
         allowNull: false,
-        autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.INTEGER
-      },
-      subscription_id: {
-        allowNull: false,
         unique: true,
         type: Sequelize.INTEGER
       },
+      // subscription_id: {
+      //   allowNull: false,
+      //   primaryKey: true,
+      //   unique: true,
+      //   type: Sequelize.INTEGER
+      // },
       company: {
         allowNull: false,
         type: Sequelize.STRING
@@ -21,11 +22,19 @@ module.exports = {
         allowNull: false,
         type: Sequelize.STRING
       },
-      createdAt: {
+      // project_id: {
+      //   allowNull: true,
+      //   type: Sequelize.INTEGER,
+      //   references: {
+      //     model: 'Projects',
+      //     key: 'id'
+      //   }
+      // },
+      created_at: {
         allowNull: false,
         type: Sequelize.DATE
       },
-      updatedAt: {
+      updated_at: {
         allowNull: false,
         type: Sequelize.DATE
       }

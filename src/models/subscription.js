@@ -4,11 +4,12 @@ export default class Subscription extends Sequelize.Model {
   static init(sequelize, DataTypes) {
     super.init(
       {
-        subscription_id: {
-          allowNull: false,
-          unique: true,
-          type: DataTypes.INTEGER
-        },
+        // subscription_id: {
+        //   allowNull: false,
+        //   primaryKey: true,
+        //   unique: true,
+        //   type: DataTypes.INTEGER
+        // },
         company: {
           allowNull: false,
           type: DataTypes.STRING
@@ -20,23 +21,15 @@ export default class Subscription extends Sequelize.Model {
       },
       {
         sequelize,
-        modelName: 'subscription'
+        underscored: true,
+        modelName: 'Subscription'
       }
     );
 
     return Subscription;
   }
-}
 
-// 'use strict';
-// module.exports = (sequelize, DataTypes) => {
-//   const Subscription = sequelize.define('Subscription', {
-//     subscription_id: DataTypes.INTEGER,
-//     company: DataTypes.STRING,
-//     api_token: DataTypes.STRING
-//   }, {});
-//   Subscription.associate = function(models) {
-//     // associations can be defined here
-//   };
-//   return Subscription;
-// };
+  static assosiate(model) {
+    Subscription.hasMany(model.Project);
+  }
+}

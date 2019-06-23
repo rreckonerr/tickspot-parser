@@ -2,6 +2,7 @@ import * as Sequelize from 'sequelize';
 import config from '../config';
 
 import Subscription from './subscription';
+import Project from './project';
 
 const { database, username, password, host, dialect, port } = config.db;
 
@@ -12,7 +13,8 @@ const sequelize = new Sequelize.Sequelize(database, username, password, {
 });
 
 const models = {
-  Subscription: Subscription.init(sequelize, Sequelize)
+  Subscription: Subscription.init(sequelize, Sequelize),
+  Project: Project.init(sequelize, Sequelize)
 };
 
 Object.keys(models).forEach(key => {
@@ -21,7 +23,7 @@ Object.keys(models).forEach(key => {
   }
 });
 
-export { Subscription };
+export { Subscription, Project };
 
 // 'use strict';
 
