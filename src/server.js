@@ -18,6 +18,14 @@ const init = async () => {
     });
   }
 
+  // const roleStruct = {
+  //   subscription_id: 126919,
+  //   company: 'Some Inc.',
+  //   api_token: '5cdbec7bb9e3d2449696b565d157d248'
+  // };
+
+  console.log('---roles', roles);
+
   const [err01, roles2] = await TickTarget.init(
     targetLogin,
     targetPassword,
