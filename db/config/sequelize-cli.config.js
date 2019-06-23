@@ -1,25 +1,7 @@
-require('dotenv').config();
+require('@babel/register');
 
-const {
-  DB_SERVER_HOST,
-  DB_SERVER_PORT,
-  DB_USERNAME,
-  DB_PASSWORD,
-  DB_DATABASE,
-  DB_DIALECT
-} = process.env;
-
-const common = {
-  database: DB_DATABASE,
-  username: DB_USERNAME,
-  password: DB_PASSWORD,
-  host: DB_SERVER_HOST,
-  port: DB_SERVER_PORT,
-  dialect: DB_DIALECT,
-  dialectOptions: {
-    ssl: true
-  }
-};
+const config = require('../../src/config').default;
+const common = config.db;
 
 module.exports = {
   development: common,
