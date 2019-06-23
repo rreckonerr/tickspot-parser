@@ -18,6 +18,14 @@ const baseConfig = {
     targetLogin: '',
     targetPassword: '',
     targetUserAgent: ''
+  },
+  db: {
+    host: '',
+    port: '',
+    database: '',
+    username: '',
+    password: '',
+    dialect: ''
   }
 };
 
