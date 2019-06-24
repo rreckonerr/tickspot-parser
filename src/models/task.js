@@ -24,7 +24,7 @@ export default class Task extends Sequelize.Model {
           allowNull: false,
           type: DataTypes.INTEGER
         },
-        dateClosed: {
+        date_closed: {
           allowNull: true,
           type: DataTypes.DATE
         },
@@ -59,5 +59,6 @@ export default class Task extends Sequelize.Model {
 
   static assosiate(models) {
     Task.belongsTo(models.Project);
+    Task.hasMany(models.Entry);
   }
 }

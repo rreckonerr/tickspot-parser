@@ -59,5 +59,6 @@ export default class Entry extends Sequelize.Model {
 
   static assosiate(models) {
     Entry.belongsTo(models.User);
+    Entry.belongsTo(models.Task);
   }
 }

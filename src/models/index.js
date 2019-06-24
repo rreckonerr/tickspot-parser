@@ -19,7 +19,8 @@ const models = {
   Subscription: Subscription.init(sequelize, Sequelize),
   Project: Project.init(sequelize, Sequelize),
   User: User.init(sequelize, Sequelize),
-  Entry: Entry.init(sequelize, Sequelize)
+  Entry: Entry.init(sequelize, Sequelize),
+  Task: Task.init(sequelize, Sequelize)
 };
 
 Object.keys(models).forEach(key => {

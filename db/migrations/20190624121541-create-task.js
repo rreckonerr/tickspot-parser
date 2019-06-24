@@ -2,31 +2,35 @@
 
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    return queryInterface.createTable('entries', {
+    return queryInterface.createTable('tasks', {
       id: {
         allowNull: false,
         unique: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      date: {
-        allowNull: false,
+      name: {
         type: Sequelize.STRING
       },
-      hours: {
+      budget: {
         type: Sequelize.FLOAT
       },
-      notes: {
-        type: Sequelize.STRING
+      position: {
+        allowNull: false,
+        type: Sequelize.INTEGER
       },
-      // task_id: {
+      // project_id: {
       //   allowNull: false,
       //   type: Sequelize.INTEGER
       // },
-      // user_id: {
-      //   allowNull: false,
-      //   type: DataTypes.INTEGER
-      // },
+      date_closed: {
+        allowNull: true,
+        type: Sequelize.DATE
+      },
+      billable: {
+        allowNull: false,
+        type: Sequelize.BOOLEAN
+      },
       url: {
         allowNull: false,
         type: Sequelize.STRING
@@ -43,6 +47,6 @@ module.exports = {
   },
 
   down: (queryInterface, Sequelize) => {
-    return queryInterface.dropTable('entries');
+    return queryInterface.dropTable('tasks');
   }
 };

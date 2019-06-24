@@ -64,7 +64,7 @@ export default class Project extends Sequelize.Model {
 
   static assosiate(models) {
     Project.belongsTo(models.Subscription);
-    Project.hasMany(model.Task);
+    Project.hasMany(models.Task);
   }
 }
 
