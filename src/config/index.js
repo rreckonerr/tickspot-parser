@@ -13,7 +13,19 @@ const baseConfig = {
   secrets: {
     sourceLogin: '',
     sourcePassword: '',
-    sourceUserAgent: ''
+    sourceUserAgent: '',
+
+    targetLogin: '',
+    targetPassword: '',
+    targetUserAgent: ''
+  },
+  db: {
+    host: '',
+    port: '',
+    database: '',
+    username: '',
+    password: '',
+    dialect: ''
   }
 };
 
