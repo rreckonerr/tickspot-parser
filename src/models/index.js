@@ -21,9 +21,7 @@ const models = {
   Entry: Entry.init(sequelize, Sequelize)
 };
 
-console.log('---models', models);
 Object.keys(models).forEach(key => {
-  console.log('---keys', key);
   if ('assosiate' in models[key]) {
     models[key].assosiate(models);
   }

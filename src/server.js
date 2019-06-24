@@ -21,7 +21,6 @@ const init = async () => {
 
   Object.values(roles).forEach(({ subscription_id, company, api_token }) => {
     const role = { id: subscription_id, company, api_token };
-    console.log('--one-of-roles', role);
     Subscription.create(role)
       .then(() => {
         logger.info(`Subscription ${role.company} created succesfully!`);
@@ -132,11 +131,11 @@ const init = async () => {
   //   });
   // }
 
-  console.log('---entries', entries);
+  // console.log('---entries', entries);
 
   entries.forEach(([subscription_id, entryKeyVal]) => {
     Object.entries(entryKeyVal).forEach(([proj_id, entries]) => {
-      console.log('---entries', entries);
+      // console.log('---entries', entries);
       entries.forEach(entry => {
         Entry.create(entry)
           .then(() => {
@@ -287,6 +286,15 @@ const init = async () => {
         });
     });
   });
+
+  const [err4, tasks] = await TickSource.getAllTasks();
+  if (err4) {
+    logger.error('Failed to get all tasks', {
+      reason: err4.message || err4
+    });
+  }
+
+  console.log('---tasks', tasks);
 };
 
 export default init;
