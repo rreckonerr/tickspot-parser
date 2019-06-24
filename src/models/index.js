@@ -5,6 +5,7 @@ import Subscription from './subscription';
 import Project from './project';
 import User from './user';
 import Entry from './entry';
+import Task from './task';
 
 const { database, username, password, host, dialect, port } = config.db;
 
@@ -27,4 +28,4 @@ Object.keys(models).forEach(key => {
   }
 });
 
-export { Subscription, Project, User, Entry };
+export { Subscription, Project, User, Entry, Task };
