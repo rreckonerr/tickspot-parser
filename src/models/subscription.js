@@ -31,5 +31,6 @@ export default class Subscription extends Sequelize.Model {
 
   static assosiate(model) {
     Subscription.hasMany(model.Project);
+    Subscription.hasMany(model.User);
   }
 }

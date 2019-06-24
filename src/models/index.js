@@ -4,6 +4,7 @@ import config from '../config';
 import Subscription from './subscription';
 import Project from './project';
 import User from './user';
+import Entry from './entry';
 
 const { database, username, password, host, dialect, port } = config.db;
 
@@ -16,7 +17,8 @@ const sequelize = new Sequelize.Sequelize(database, username, password, {
 const models = {
   Subscription: Subscription.init(sequelize, Sequelize),
   Project: Project.init(sequelize, Sequelize),
-  User: User.init(sequelize, Sequelize)
+  User: User.init(sequelize, Sequelize),
+  Entry: Entry.init(sequelize, Sequelize)
 };
 
 console.log('---models', models);
@@ -27,4 +29,4 @@ Object.keys(models).forEach(key => {
   }
 });
 
-export { Subscription, Project, User };
+export { Subscription, Project, User, Entry };

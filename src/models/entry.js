@@ -1,6 +1,6 @@
 import * as Sequelize from 'sequelize';
 
-export default class User extends Sequelize.Model {
+export default class Entry extends Sequelize.Model {
   static init(sequelize, DataTypes) {
     super.init(
       {
@@ -10,19 +10,25 @@ export default class User extends Sequelize.Model {
           primaryKey: true,
           type: DataTypes.INTEGER
         },
-        first_name: {
+        date: {
           allowNull: false,
           type: DataTypes.STRING
         },
-        last_name: {
-          allowNull: false,
+        hours: {
+          type: DataTypes.FLOAT
+        },
+        notes: {
           type: DataTypes.STRING
         },
-        email: {
+        task_id: {
           allowNull: false,
-          type: DataTypes.STRING
+          type: DataTypes.INTEGER
         },
-        timezone: {
+        user_id: {
+          allowNull: false,
+          type: DataTypes.INTEGER
+        },
+        url: {
           allowNull: false,
           type: DataTypes.STRING
         },
@@ -33,14 +39,6 @@ export default class User extends Sequelize.Model {
         updated_at: {
           allowNull: false,
           type: DataTypes.DATE
-        },
-        billable_rate: {
-          allowNull: true,
-          type: DataTypes.INTEGER
-        },
-        subscription_id: {
-          allowNull: false,
-          type: DataTypes.INTEGER
         }
       },
       {
@@ -48,16 +46,18 @@ export default class User extends Sequelize.Model {
         // timestamps are provided by the API
         timestamps: false,
         undescored: true,
-        modelName: 'user'
+        modelName: 'entry',
+        name: {
+          singular: 'entry',
+          plural: 'entries'
+        }
       }
     );
 
-    return User;
+    return Entry;
   }
 
   static assosiate(models) {
-    User.belongsTo(models.Subscription);
-    User.hasMany(models.Entry);
-    // User.belongsTo(models.Project);
+    Entry.belongsTo(models.User);
   }
 }
