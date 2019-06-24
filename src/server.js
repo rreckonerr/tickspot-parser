@@ -1,5 +1,6 @@
 import config from './config';
 import { TickSource, TickTarget, logger } from './helpers';
+import { Subscription, Project, User, Entry, Task } from './models';
 
 // TODO: add logger
 const init = async () => {
@@ -18,6 +19,17 @@ const init = async () => {
     });
   }
 
+  Object.values(roles).forEach(({ subscription_id, company, api_token }) => {
+    const role = { id: subscription_id, company, api_token };
+    Subscription.create(role)
+      .then(() => {
+        logger.info(`Subscription ${role.company} created succesfully!`);
+      })
+      .catch(err => {
+        logger.error('Failed to create subscr', { reason: err.message || err });
+      });
+  });
+
   const [err01, roles2] = await TickTarget.init(
     targetLogin,
     targetPassword,
@@ -29,17 +41,24 @@ const init = async () => {
     });
   }
 
-  // console.log('---roles-source-available', roles);
-  // console.log('---roles-target-available', roles2);
-
-  // TODO: should return [[subscription_id, { project_id: project }]]
-  // TODO: currently it's { project_id: project }
   const [err1, projects] = await TickSource.getAllProjects();
   if (err1) {
     logger.error(`Tatata`, { reason: err1.message || err1 });
   }
 
-  // console.log('---projects-available', projects);
+  Object.entries(projects).forEach(([subscription_id, projectsArr]) => {
+    projectsArr.forEach(project => {
+      Project.create({ ...project, subscription_id })
+        .then(() => {
+          logger.info(`Project ${project.name} created succesfully!`);
+        })
+        .catch(err => {
+          logger.error(`Failed to create project`, {
+            reason: err.message || err
+          });
+        });
+    });
+  });
 
   const fromDate = '2019-06-01';
 
@@ -50,35 +69,22 @@ const init = async () => {
     });
   }
 
-  const [err21, entries2] = await TickTarget.getAllEntries(fromDate);
-  if (err21) {
-    logger.error(`Failed to get target entries`, {
-      reason: err21.message || err21
-    });
-  }
-
-  // console.log('---entries', entries);
-
-  entries.forEach(([, entryKeyVal]) => {
+  entries.forEach(([subscription_id, entryKeyVal]) => {
     Object.entries(entryKeyVal).forEach(([proj_id, entries]) => {
-      // console.log('---id', proj_id);
       entries.forEach(entry => {
-        // console.log('---entry-source', entry);
+        Entry.create(entry)
+          .then(() => {
+            logger.info(`Entry ${entry.id} created succesfully!`);
+          })
+          .catch(err => {
+            logger.error(`Failed to create entry ${entry.id}`, {
+              reason: err.message || err
+            });
+          });
       });
     });
   });
 
-  entries2.forEach(([, entryKeyVal]) => {
-    Object.entries(entryKeyVal).forEach(([proj_id, entries]) => {
-      // console.log('---id', proj_id);
-      entries.forEach(entry => {
-        // console.log('---entry-target', entry);
-      });
-    });
-  });
-
-  // TODO: should return [[subscription_id, { user_id: user }]
-  // TODO: curently it's [{ user_id: user }]
   const [err3, users] = await TickSource.getAllUsers();
   if (err3) {
     logger.error('Failed to get source users', {
@@ -86,7 +92,38 @@ const init = async () => {
     });
   }
 
-  // console.log('---users', users);
+  Object.entries(users).forEach(([subscription_id, usersArr]) => {
+    usersArr.forEach(user => {
+      User.create({ ...user, subscription_id })
+        .then(() => {
+          logger.info(`User ${user.email} created succesfully!`);
+        })
+        .catch(err => {
+          logger.error(`Failed to create user ${user.email}`, {
+            reason: err.message || err
+          });
+        });
+    });
+  });
+
+  const [err4, tasks] = await TickSource.getAllTasks();
+  if (err4) {
+    logger.error('Failed to get all tasks', {
+      reason: err4.message || err4
+    });
+  }
+
+  tasks.forEach(task => {
+    Task.create(task)
+      .then(() => {
+        logger.info(`Task ${task.name} created succesfully!`);
+      })
+      .catch(err => {
+        logger.error(`Failed to create task ${task.name}`, {
+          reason: err.message || err
+        });
+      });
+  });
 };
 
 export default init;

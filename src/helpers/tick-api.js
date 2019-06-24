@@ -41,22 +41,109 @@ class TickApi {
     }
   }
 
+  async getAllTasks() {
+    console.log('--tasks-called');
+    if (!this.projects) {
+      try {
+        await this.getAllProjects();
+      } catch (error) {
+        console.error(`Failed to init projects`);
+        return [error];
+      }
+    }
+
+    let i = 0;
+    const roles = Object.values(this.roles);
+    const tasks = [];
+
+    while (i < roles.length) {
+      const { subscription_id } = roles[i];
+      try {
+        for await (const tasksRaw of this.tasksGen(subscription_id)) {
+          tasks.push(...tasksRaw);
+        }
+      } catch (err) {
+        console.error(
+          `Failed to get tasks for ${this.roles[subscription_id].company}`
+        );
+      } finally {
+        i++;
+      }
+    }
+
+    this.tasks = tasks;
+
+    return [null, tasks];
+  }
+
+  async *tasksGen(subscription_id) {
+    const { api_token } = this.roles[subscription_id];
+
+    const options = {
+      subscription_id,
+      api_token
+    };
+
+    try {
+      yield await this.getTasks(options);
+    } catch (error) {
+      console.error(`Failed to get tasks`, error.message || error);
+      yield [];
+    }
+  }
+
+  async getTasks({ subscription_id, api_token }) {
+    const options = {
+      url: `${this.apiRoot}/${subscription_id}/${this.apiName}/tasks.json`,
+      headers: {
+        Authorization: `Token token=${api_token}`,
+        'User-Agent': this.agent
+      },
+      json: true
+    };
+
+    try {
+      const tasks = await this.getRequest(options);
+
+      return tasks;
+    } catch (error) {
+      console.error(`Failed to fetch tasks :(`);
+      return [];
+    }
+  }
+
   // TODO: refactor to return [ [subscription_id, { user_id: user }] ]
   async getAllUsers() {
     try {
-      let users = {};
+      let i = 0;
+      const roles = Object.values(this.roles);
+      const users = {};
 
-      for await (let usersRaw of this.usersGen()) {
-        usersRaw.forEach(userRaw => {
-          users[userRaw.id] = userRaw;
-        });
+      while (i < roles.length) {
+        const { subscription_id, company } = roles[i];
+        try {
+          for await (let usersRaw of this.usersGen(subscription_id)) {
+            users[subscription_id] = usersRaw;
+          }
+        } catch (err) {
+          console.error(
+            `Failed to get users for ${company}`,
+            err.message || err
+          );
+        } finally {
+          i++;
+        }
       }
 
       this.users = users;
 
-      logger.info(
-        `${this.user} has ${Object.keys(users).length} users available.`
-      );
+      const usersCount = Object.keys(users).reduce((acc, key) => {
+        acc += users[key].length;
+        return acc;
+      }, 0);
+
+      logger.info(`${this.user} has ${usersCount} users available.`);
+
       return [null, users];
     } catch (error) {
       console.error(`Failed to get all users`, error.messsage || error);
@@ -64,27 +151,20 @@ class TickApi {
     }
   }
 
-  async *usersGen() {
-    let i = 0;
-    const roles = Object.values(this.roles);
+  async *usersGen(subscription_id) {
+    // TODO: add pages
+    const { api_token } = this.roles[subscription_id];
 
-    while (i < roles.length) {
-      const role = roles[i];
-      const { subscription_id, api_token } = role;
+    const options = {
+      subscription_id,
+      api_token
+    };
 
-      const options = {
-        subscription_id,
-        api_token
-      };
-
-      try {
-        yield await this.getUsers(options);
-      } catch (error) {
-        console.error(`Failed to get users`, error.message || error);
-        yield [];
-      } finally {
-        i++;
-      }
+    try {
+      yield await this.getUsers(options);
+    } catch (error) {
+      console.error(`Failed to get users`, error.message || error);
+      yield [];
     }
   }
 
