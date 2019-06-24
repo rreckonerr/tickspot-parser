@@ -22,7 +22,7 @@ export default class Subscription extends Sequelize.Model {
       {
         sequelize,
         underscored: true,
-        modelName: 'Subscription'
+        modelName: 'subscription'
       }
     );
 

@@ -1,19 +1,13 @@
 'use strict';
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    return queryInterface.createTable('Subscriptions', {
+    return queryInterface.createTable('subscriptions', {
       id: {
         allowNull: false,
         primaryKey: true,
         unique: true,
         type: Sequelize.INTEGER
       },
-      // subscription_id: {
-      //   allowNull: false,
-      //   primaryKey: true,
-      //   unique: true,
-      //   type: Sequelize.INTEGER
-      // },
       company: {
         allowNull: false,
         type: Sequelize.STRING
@@ -22,14 +16,6 @@ module.exports = {
         allowNull: false,
         type: Sequelize.STRING
       },
-      // project_id: {
-      //   allowNull: true,
-      //   type: Sequelize.INTEGER,
-      //   references: {
-      //     model: 'Projects',
-      //     key: 'id'
-      //   }
-      // },
       created_at: {
         allowNull: false,
         type: Sequelize.DATE
@@ -41,6 +27,6 @@ module.exports = {
     });
   },
   down: (queryInterface, Sequelize) => {
-    return queryInterface.dropTable('Subscriptions');
+    return queryInterface.dropTable('subscriptions');
   }
 };

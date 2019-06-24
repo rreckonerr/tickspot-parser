@@ -2,7 +2,7 @@
 
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    return queryInterface.createTable('Projects', {
+    return queryInterface.createTable('projects', {
       id: {
         allowNull: false,
         unique: true,
@@ -36,10 +36,6 @@ module.exports = {
         allowNull: false,
         type: Sequelize.INTEGER
       },
-      // subscription_id: {
-      //   allowNull: false,
-      //   type: Sequelize.INTEGER
-      // },
       url: {
         type: Sequelize.STRING
       },
@@ -55,13 +51,6 @@ module.exports = {
   },
 
   down: (queryInterface, Sequelize) => {
-    return queryInterface.dropTable('Projects');
-    /*
-      Add reverting commands here.
-      Return a promise to correctly handle asynchronicity.
-
-      Example:
-      return queryInterface.dropTable('users');
-    */
+    return queryInterface.dropTable('projects');
   }
 };

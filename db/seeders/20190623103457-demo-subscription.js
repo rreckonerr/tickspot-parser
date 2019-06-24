@@ -12,10 +12,10 @@ const testSubscriptions = [
 
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    return queryInterface.bulkInsert('Subscriptions', testSubscriptions, {});
+    return queryInterface.bulkInsert('subscriptions', testSubscriptions, {});
   },
 
   down: (queryInterface, Sequelize) => {
-    return queryInterface.bulkDelete('Subscriptions', null, {});
+    return queryInterface.bulkDelete('subscriptions', null, {});
   }
 };

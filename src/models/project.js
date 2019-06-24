@@ -42,12 +42,20 @@ export default class Project extends Sequelize.Model {
         },
         url: {
           type: DataTypes.STRING
+        },
+        created_at: {
+          type: DataTypes.DATE
+        },
+        updated_at: {
+          type: DataTypes.DATE
         }
       },
       {
         sequelize,
+        // timestamps are provided by the API
+        timestamps: false,
         undescored: true,
-        modelName: 'Project'
+        modelName: 'project'
       }
     );
 

@@ -19,17 +19,17 @@ const init = async () => {
     });
   }
 
-  // Object.values(roles).forEach(({ subscription_id, company, api_token }) => {
-  //   const role = { id: subscription_id, company, api_token };
-  //   console.log('--one-of-roles', role);
-  //   Subscription.create(role)
-  //     .then(() => {
-  //       logger.info('Subscr created succesfully!');
-  //     })
-  //     .catch(err => {
-  //       logger.error('Failed to create subscr', { reason: err.message || err });
-  //     });
-  // });
+  Object.values(roles).forEach(({ subscription_id, company, api_token }) => {
+    const role = { id: subscription_id, company, api_token };
+    console.log('--one-of-roles', role);
+    Subscription.create(role)
+      .then(() => {
+        logger.info(`Subscription ${role.company} created succesfully!`);
+      })
+      .catch(err => {
+        logger.error('Failed to create subscr', { reason: err.message || err });
+      });
+  });
 
   // const rolesExample = { '126919':
   //  { subscription_id: 126919,
@@ -99,22 +99,22 @@ const init = async () => {
   //   updated_at: '2019-06-20T05:30:31.000-04:00'
   // };
 
-  Object.values(projects).forEach(projectsArr => {
+  Object.entries(projects).forEach(([subscription_id, projectsArr]) => {
     projectsArr.forEach(project => {
-      console.log('---project', project);
-      Project.create(project)
+      // console.log('---project', project);
+      Project.create({ ...project, subscription_id })
         .then(() => {
-          logger.info('Project created succesfully!');
+          logger.info(`Project ${project.name} created succesfully!`);
         })
         .catch(err => {
-          logger.error('Failed to create project', {
+          logger.error(`Failed to create project`, {
             reason: err.message || err
           });
         });
     });
   });
 
-  console.log('---projects-available', projects);
+  // console.log('---projects-available', projects);
 
   const fromDate = '2019-06-01';
 
@@ -161,7 +161,61 @@ const init = async () => {
     });
   }
 
-  // console.log('---users', users);
+  // const usersExample = {
+  //   '339348': {
+  //     id: 339348,
+  //     first_name: 'Volodymyr',
+  //     last_name: 'Radchenko',
+  //     email: 'bratko_bob@yahoo.com',
+  //     timezone: 'Eastern Time (US & Canada)',
+  //     created_at: '2019-06-20T05:08:29.000-04:00',
+  //     updated_at: '2019-06-20T05:09:26.000-04:00',
+  //     billable_rate: null
+  //   },
+  //   '339349': {
+  //     id: 339349,
+  //     first_name: 'Test 1',
+  //     last_name: 'Test 1',
+  //     email: 'rreckonerr@gmail.com',
+  //     timezone: 'Eastern Time (US & Canada)',
+  //     created_at: '2019-06-20T05:13:17.000-04:00',
+  //     updated_at: '2019-06-20T05:17:31.000-04:00',
+  //     billable_rate: null
+  //   },
+  //   '339350': {
+  //     id: 339350,
+  //     first_name: 'Test 2 ',
+  //     last_name: 'Test 2',
+  //     email: 'snowman.legalise@gmail.com',
+  //     timezone: 'Eastern Time (US & Canada)',
+  //     created_at: '2019-06-20T05:16:39.000-04:00',
+  //     updated_at: '2019-06-20T05:17:17.000-04:00',
+  //     billable_rate: null
+  //   },
+  //   '339351': {
+  //     id: 339351,
+  //     first_name: 'random dude',
+  //     last_name: 'dude',
+  //     email: 'random@dude.com',
+  //     timezone: 'Eastern Time (US & Canada)',
+  //     created_at: '2019-06-20T05:29:52.000-04:00',
+  //     updated_at: '2019-06-20T05:29:52.000-04:00',
+  //     billable_rate: null
+  //   }
+  // };
+
+  // const userStruct = {
+  //   id: 339349,
+  //   first_name: 'Test 1',
+  //   last_name: 'Test 1',
+  //   email: 'rreckonerr@gmail.com',
+  //   timezone: 'Eastern Time (US & Canada)',
+  //   created_at: '2019-06-20T05:13:17.000-04:00',
+  //   updated_at: '2019-06-20T05:17:31.000-04:00',
+  //   billable_rate: null
+  // };
+
+  console.log('---users', users);
 };
 
 export default init;
