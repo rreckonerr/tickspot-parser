@@ -1,6 +1,6 @@
 import config from './config';
 import { TickSource, TickTarget, logger } from './helpers';
-import { Subscription, Project } from './models';
+import { Subscription, Project, User } from './models';
 
 // TODO: add logger
 const init = async () => {
@@ -125,32 +125,32 @@ const init = async () => {
     });
   }
 
-  const [err21, entries2] = await TickTarget.getAllEntries(fromDate);
-  if (err21) {
-    logger.error(`Failed to get target entries`, {
-      reason: err21.message || err21
-    });
-  }
+  // const [err21, entries2] = await TickTarget.getAllEntries(fromDate);
+  // if (err21) {
+  //   logger.error(`Failed to get target entries`, {
+  //     reason: err21.message || err21
+  //   });
+  // }
 
-  // console.log('---entries', entries);
+  console.log('---entries', entries);
 
-  entries.forEach(([, entryKeyVal]) => {
+  entries.forEach(([subscription_id, entryKeyVal]) => {
     Object.entries(entryKeyVal).forEach(([proj_id, entries]) => {
-      // console.log('---id', proj_id);
+      console.log('---entries', entries);
       entries.forEach(entry => {
         // console.log('---entry-source', entry);
       });
     });
   });
 
-  entries2.forEach(([, entryKeyVal]) => {
-    Object.entries(entryKeyVal).forEach(([proj_id, entries]) => {
-      // console.log('---id', proj_id);
-      entries.forEach(entry => {
-        // console.log('---entry-target', entry);
-      });
-    });
-  });
+  // entries2.forEach(([, entryKeyVal]) => {
+  //   Object.entries(entryKeyVal).forEach(([proj_id, entries]) => {
+  //     // console.log('---id', proj_id);
+  //     entries.forEach(entry => {
+  //       // console.log('---entry-target', entry);
+  //     });
+  //   });
+  // });
 
   // TODO: should return [[subscription_id, { user_id: user }]
   // TODO: curently it's [{ user_id: user }]
@@ -215,7 +215,21 @@ const init = async () => {
   //   billable_rate: null
   // };
 
-  console.log('---users', users);
+  // console.log('---users', users);
+
+  Object.entries(users).forEach(([subscription_id, usersArr]) => {
+    usersArr.forEach(user => {
+      User.create({ ...user, subscription_id })
+        .then(() => {
+          logger.info(`User ${user.email} created succesfully!`);
+        })
+        .catch(err => {
+          logger.error(`Failed to create user ${user.email}`, {
+            reason: err.message || err
+          });
+        });
+    });
+  });
 };
 
 export default init;
