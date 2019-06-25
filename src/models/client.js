@@ -1,6 +1,6 @@
 import * as Sequelize from 'sequelize';
 
-export default class Task extends Sequelize.Model {
+export default class Client extends Sequelize.Model {
   static init(sequelize, DataTypes) {
     super.init(
       {
@@ -11,24 +11,10 @@ export default class Task extends Sequelize.Model {
           type: DataTypes.INTEGER
         },
         name: {
+          allowNull: false,
           type: DataTypes.STRING
         },
-        budget: {
-          type: DataTypes.FLOAT
-        },
-        position: {
-          allowNull: false,
-          type: DataTypes.INTEGER
-        },
-        project_id: {
-          allowNull: false,
-          type: DataTypes.INTEGER
-        },
-        date_closed: {
-          allowNull: true,
-          type: DataTypes.DATE
-        },
-        billable: {
+        archive: {
           allowNull: false,
           type: DataTypes.BOOLEAN
         },
@@ -36,29 +22,34 @@ export default class Task extends Sequelize.Model {
           allowNull: false,
           type: DataTypes.STRING
         },
-        created_at: {
+        updated_at: {
           allowNull: false,
           type: DataTypes.DATE
         },
-        updated_at: {
-          allowNull: false,
+        created_at: {
+          //   allowNull: false,
           type: DataTypes.DATE
         }
       },
       {
         sequelize,
-        // timestamps are provided by the API
-        timestamps: false,
         underscored: true,
-        modelName: 'task'
+        modelName: 'client'
       }
     );
 
-    return Task;
+    return Client;
   }
 
   static assosiate(models) {
-    Task.belongsTo(models.Project);
-    Task.hasMany(models.Entry);
+    Client.hasMany(models.Project);
   }
 }
+
+// const clientExample = {
+//   id: 363380,
+//   name: 'digis',
+//   archive: false,
+//   url: 'http://secure.tickspot.com/110437/api/v2/clients/363380.json',
+//   updated_at: '2019-06-25T07:31:39.000-04:00'
+// };

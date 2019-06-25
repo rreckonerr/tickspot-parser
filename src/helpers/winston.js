@@ -1,24 +1,16 @@
 import { addColors, createLogger, transports, format } from 'winston';
 
 addColors({
-  error: 'inverse red',
-  warn: 'inverse yellow',
+  error: 'inverse bold red',
+  warn: 'inverse bold yellow',
   info: 'inverse bold green',
-  verbose: 'inverse blue',
-  debug: 'inverse white',
-  silly: 'bold gray'
+  verbose: 'inverse bold blue',
+  debug: 'inverse bold white',
+  silly: 'bold blue'
 });
 
 const logger = createLogger({
-  level: 'info',
-  levels: {
-    error: 0,
-    warn: 1,
-    info: 2,
-    verbose: 3,
-    debug: 4,
-    silly: 5
-  },
+  level: 'silly',
   format: format.combine(format.simple()),
   transports: [
     new transports.Console({

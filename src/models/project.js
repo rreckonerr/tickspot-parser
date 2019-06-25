@@ -54,7 +54,7 @@ export default class Project extends Sequelize.Model {
         sequelize,
         // timestamps are provided by the API
         timestamps: false,
-        undescored: true,
+        underscored: true,
         modelName: 'project'
       }
     );
@@ -64,6 +64,8 @@ export default class Project extends Sequelize.Model {
 
   static assosiate(models) {
     Project.belongsTo(models.Subscription);
+    Project.belongsTo(models.Client);
+    Project.belongsTo(models.User, { as: 'owner' });
     Project.hasMany(models.Task);
   }
 }
