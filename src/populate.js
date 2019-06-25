@@ -1,36 +1,19 @@
 import config from './config';
-import { TickSource, TickTarget, logger } from './helpers';
+import { TickSource, logger } from './helpers';
 import { Subscription, Project, User, Entry, Task, Client } from './models';
-import { ProjectCtrl } from './controllers';
 
-const init = async () => {
-  logger.info('Starting the app!');
-  const {
-    sourceLogin,
-    sourcePassword,
-    sourceUserAgent,
-    targetLogin,
-    targetPassword,
-    targetUserAgent
-  } = config.secrets;
-
-  const [err0, sourceRole] = await TickSource.init(
-    sourceLogin,
-    sourcePassword,
-    sourceUserAgent
-  );
-  if (err0) {
-    logger.error(`Failed to init TickSource`, {
-      reason: err0.message || err0
-    });
-  }
-
-  const [err1, clients] = await TickSource.getAllClients();
-  if (err1) {
-    logger.error(`Failed to get clients`, { reason: err1.message || err1 });
-  }
-
-  console.log('---clients', clients);
+const saveClientsToDb = async clients => {
+  return await clients.forEach(async client => {
+    await Client.create(client)
+      .then(() => {
+        logger.info(`Client ${client.id} is added to DB succesfully!`);
+      })
+      .catch(err => {
+        logger.error(`Failed to add client ${client.id} to the DB.`, {
+          reason: err.message || err
+        });
+      });
+  });
 };
 
 const saveEntriesToDb = async entries => {
@@ -47,9 +30,9 @@ const saveEntriesToDb = async entries => {
   });
 };
 
-const saveUsersToDb = async users => {
+const saveUsersToDb = async (users, subscription_id) => {
   return await users.forEach(async user => {
-    await User.create({ ...user, subscription_id: sourceRole.subscription_id })
+    await User.create({ ...user, subscription_id: subscription_id })
       .then(() => {
         logger.info(`User ${user.email} created succesfully!`);
       })
@@ -75,16 +58,42 @@ const saveTasksToDb = async tasks => {
   });
 };
 
-const initIdle = async () => {
+const saveProjectsToDb = async (projects, subscription_id) => {
+  return projects.forEach(project => {
+    Project.create({ ...project, subscription_id })
+      .then(() => {
+        logger.info(`Project ${project.name} created succesfully!`);
+      })
+      .catch(err => {
+        logger.error(`Failed to create project ${project.name}`, {
+          reason: err.message || err
+        });
+      });
+  });
+};
+
+const saveSubscriptionToDb = async role => {
+  return await Subscription.create(role)
+    .then(() => {
+      logger.info(`Subscription ${role.company} created succesfully!`);
+    })
+    .catch(err => {
+      logger.error('Failed to create subscr', {
+        reason: err.message || err
+      });
+    });
+};
+
+const init = async () => {
   try {
     logger.info('Starting the app!');
     const {
       sourceLogin,
       sourcePassword,
-      sourceUserAgent,
-      targetLogin,
-      targetPassword,
-      targetUserAgent
+      sourceUserAgent
+      // targetLogin,
+      // targetPassword,
+      // targetUserAgent
     } = config.secrets;
 
     const [err0, sourceRole] = await TickSource.init(
@@ -101,26 +110,18 @@ const initIdle = async () => {
     const { subscription_id, company, api_token } = sourceRole;
     const dbRole = { id: subscription_id, company, api_token };
 
-    Subscription.create(dbRole)
-      .then(() => {
-        logger.info(`Subscription ${sourceRole.company} created succesfully!`);
-      })
-      .catch(err => {
-        logger.error('Failed to create subscr', {
-          reason: err.message || err
-        });
-      });
+    // console.log('---sourceRole', sourceRole);
+    await saveSubscriptionToDb(dbRole);
 
-    const [err01, targetRole] = await TickTarget.init(
-      targetLogin,
-      targetPassword,
-      targetUserAgent
-    );
-    if (err01) {
-      logger.error(`Failed to init TickTarget`, {
-        reason: err01.message || err01
+    const [err1, sourceProjects] = await TickSource.getAllProjects();
+    if (err1) {
+      logger.error(`Failed to get all projects for source`, {
+        reason: err1.message || err1
       });
     }
+
+    // console.log('---source-projects', sourceProjects);
+    await saveProjectsToDb(sourceProjects, subscription_id);
 
     const fromDate = '2019-06-01';
 
@@ -131,6 +132,7 @@ const initIdle = async () => {
       });
     }
 
+    // console.log('---entries', entries);
     await saveEntriesToDb(entries);
 
     const [err3, users] = await TickSource.getAllUsers();
@@ -140,7 +142,8 @@ const initIdle = async () => {
       });
     }
 
-    await saveUsersToDb(users);
+    // console.log('---users', users);
+    await saveUsersToDb(users, subscription_id);
 
     const [err4, tasks] = await TickSource.getAllTasks();
     if (err4) {
@@ -149,7 +152,15 @@ const initIdle = async () => {
       });
     }
 
+    // console.log('---tasks', tasks);
     await saveTasksToDb(tasks);
+
+    const [err5, clients] = await TickSource.getAllClients();
+    if (err5) {
+      logger.error(`Failed to get clients`, { reason: err5.message || err5 });
+    }
+    // console.log('---clients', clients);
+    await saveClientsToDb(clients);
   } catch (error) {
     logger.error(`Failed to populate!`, { reason: error.message || error });
     process.exit(1);

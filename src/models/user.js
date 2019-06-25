@@ -58,6 +58,7 @@ export default class User extends Sequelize.Model {
   static assosiate(models) {
     User.belongsTo(models.Subscription);
     User.hasMany(models.Entry);
+    User.hasMany(models.Project);
     // User.belongsTo(models.Project);
   }
 }

@@ -1,3 +1,4 @@
 import ProjectCtrl from './project';
+import UserCtrl from './user';
 
-export { ProjectCtrl };
+export { ProjectCtrl, UserCtrl };

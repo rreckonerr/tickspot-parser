@@ -2,7 +2,7 @@
 
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    return queryInterface.createTable('projects', {
+    return queryInterface.createTable('clients', {
       id: {
         allowNull: false,
         unique: true,
@@ -13,30 +13,12 @@ module.exports = {
         allowNull: false,
         type: Sequelize.STRING
       },
-      budget: {
-        type: Sequelize.INTEGER
-      },
-      date_closed: {
-        allowNull: true,
-        type: Sequelize.DATE
-      },
-      notifications: {
+      archive: {
+        allowNull: false,
         type: Sequelize.BOOLEAN
       },
-      billable: {
-        type: Sequelize.BOOLEAN
-      },
-      recurring: {
-        type: Sequelize.BOOLEAN
-      },
-      // client_id: {
-      //   type: Sequelize.INTEGER
-      // },
-      // owner_id: {
-      //   allowNull: false,
-      //   type: Sequelize.INTEGER
-      // },
       url: {
+        allowNull: false,
         type: Sequelize.STRING
       },
       created_at: {
@@ -51,6 +33,6 @@ module.exports = {
   },
 
   down: (queryInterface, Sequelize) => {
-    return queryInterface.dropTable('projects');
+    return queryInterface.dropTable('clients');
   }
 };

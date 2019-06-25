@@ -6,6 +6,7 @@ import Project from './project';
 import User from './user';
 import Entry from './entry';
 import Task from './task';
+import Client from './client';
 
 const { database, username, password, host, dialect, port } = config.db;
 
@@ -20,7 +21,8 @@ const models = {
   Project: Project.init(sequelize, Sequelize),
   User: User.init(sequelize, Sequelize),
   Entry: Entry.init(sequelize, Sequelize),
-  Task: Task.init(sequelize, Sequelize)
+  Task: Task.init(sequelize, Sequelize),
+  Client: Client.init(sequelize, Sequelize)
 };
 
 Object.keys(models).forEach(key => {
@@ -29,4 +31,4 @@ Object.keys(models).forEach(key => {
   }
 });
 
-export { Subscription, Project, User, Entry, Task };
+export { Subscription, Project, User, Entry, Task, Client };

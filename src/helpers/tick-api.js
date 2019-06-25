@@ -134,7 +134,7 @@ class TickApi {
       return [null, clients];
     } catch (error) {
       logger.error(`Failed to fetch clients for ${this.type} ${this.user}`, {
-        reason: err.message || err
+        reason: error.message || error
       });
     }
   }
@@ -236,7 +236,43 @@ class TickApi {
     }
   }
 
-  // TODO: refactor to return [ [subscription_id, { user_id: user }] ]
+  async createUser(user = null) {
+    if (!user) return ['No user data provided'];
+
+    const { subscription_id, api_token } = this.role;
+
+    const { first_name, last_name, email, admin, billable_rate } = user;
+
+    const options = {
+      url: `${this.apiRoot}/${subscription_id}/${this.apiName}/users.json`,
+      headers: {
+        Authorization: `Token token=${api_token}`,
+        'User-Agent': this.agent
+      },
+      body: {
+        user: {
+          first_name,
+          last_name,
+          email,
+          admin,
+          billable_rate
+        }
+      },
+      json: true
+    };
+
+    try {
+      const newUser = await this.postRequest(options);
+
+      return [null, newUser];
+    } catch (error) {
+      logger.error(`Failed to POST user ${email} to target`, {
+        reason: error.message || error
+      });
+      return [error.message || error];
+    }
+  }
+
   async getAllUsers() {
     try {
       const users = [];
@@ -468,7 +504,7 @@ class TickApi {
   async postRequest(options = null) {
     if (!options) {
       logger.error(`No options provided for post request`);
-      return [];
+      return undefined;
     }
     try {
       const data = await request({ ...options, method: 'POST' });
@@ -479,7 +515,7 @@ class TickApi {
         reason: error.message || error,
         metadata: options
       });
-      return [];
+      return undefined;
     }
   }
 }
