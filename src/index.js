@@ -25,8 +25,8 @@ const askUserForAction = async () => {
 };
 
 const handler = async () => {
-  const userAction = await askUserForAction();
-  // const userAction = await Promise.resolve('synchronize');
+  // const userAction = await askUserForAction();
+  const userAction = await Promise.resolve('populate');
 
   switch (userAction) {
     case 'populate':

@@ -21,6 +21,9 @@ class TickApi {
     this.role = null;
     this.projects = null;
     this.entries = null;
+    this.users = null;
+    this.tasks = null;
+    this.clients = null;
   }
 
   async init(user = '', pass = '', agent = '') {
@@ -114,33 +117,87 @@ class TickApi {
     return roles.find(({ subscription_id }) => subscription_id === selected_id);
   }
 
-  async getAllTasks() {
-    if (!this.projects) {
-      try {
-        await this.getAllProjects();
-      } catch (error) {
-        console.error(`Failed to init projects`);
-        return [error];
-      }
-    }
+  async getAllClients() {
+    const clients = [];
 
+    try {
+      for await (const clientsRaw of this.clientsGen()) {
+        clients.push(...clientsRaw);
+      }
+
+      this.clients = clients;
+
+      logger.verbose(
+        `Successfully downloaded ${clients.length} clients for ${this.type} ${this.user}.`
+      );
+
+      return [null, clients];
+    } catch (error) {
+      logger.error(`Failed to fetch clients for ${this.type} ${this.user}`, {
+        reason: err.message || err
+      });
+    }
+  }
+
+  async *clientsGen() {
+    const { api_token, subscription_id } = this.role;
+
+    const options = {
+      subscription_id,
+      api_token
+    };
+
+    try {
+      yield await this.getClients(options);
+    } catch (error) {
+      console.error(`Failed to get clients`, error.message || error);
+      yield [];
+    }
+  }
+
+  async getClients({ subscription_id, api_token }) {
+    const options = {
+      url: `${this.apiRoot}/${subscription_id}/${this.apiName}/clients.json`,
+      headers: {
+        Authorization: `Token token=${api_token}`,
+        'User-Agent': this.agent
+      },
+      json: true
+    };
+
+    try {
+      const clients = await this.getRequest(options);
+
+      return clients;
+    } catch (error) {
+      logger.error(`Failed to fetch clients :(`, {
+        reason: error.message || error
+      });
+      return [];
+    }
+  }
+
+  async getAllTasks() {
     const tasks = [];
 
     try {
       for await (const tasksRaw of this.tasksGen()) {
         tasks.push(...tasksRaw);
       }
+
+      this.tasks = tasks;
+
+      logger.verbose(
+        `Successfully downloaded ${tasks.length} tasks for ${this.type} ${this.user}.`
+      );
+
+      return [null, tasks];
     } catch (err) {
-      console.error(`Failed to get tasks for ${this.type} ${this.user}`);
+      logger.error(`Failed to get tasks for ${this.type} ${this.user}`, {
+        reason: err.message || err
+      });
+      return [err.message || err];
     }
-
-    this.tasks = tasks;
-
-    logger.verbose(
-      `Successfully downloaded ${tasks.length} tasks for ${this.type} ${this.user}.`
-    );
-
-    return [null, tasks];
   }
 
   async *tasksGen() {
@@ -316,7 +373,7 @@ class TickApi {
       const projects = [];
 
       for await (const projectsRaw of this.projectsGen()) {
-        projects.push(projectsRaw);
+        projects.push(...projectsRaw);
       }
 
       this.projects = projects;
