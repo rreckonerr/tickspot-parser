@@ -1,6 +1,7 @@
 import config from './config';
 import { TickSource, TickTarget, logger } from './helpers';
 import { Subscription, Project, User, Entry, Task } from './models';
+import { ProjectCtrl } from './controllers';
 
 // TODO: add logger
 const init = async () => {
@@ -48,7 +49,7 @@ const init = async () => {
 
   Object.entries(projects).forEach(([subscription_id, projectsArr]) => {
     projectsArr.forEach(project => {
-      Project.create({ ...project, subscription_id })
+      ProjectCtrl.createProject(project, subscription_id)
         .then(() => {
           logger.info(`Project ${project.name} created succesfully!`);
         })

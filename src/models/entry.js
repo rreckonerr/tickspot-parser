@@ -45,7 +45,7 @@ export default class Entry extends Sequelize.Model {
         sequelize,
         // timestamps are provided by the API
         timestamps: false,
-        undescored: true,
+        underscored: true,
         modelName: 'entry',
         name: {
           singular: 'entry',

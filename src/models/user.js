@@ -47,7 +47,7 @@ export default class User extends Sequelize.Model {
         sequelize,
         // timestamps are provided by the API
         timestamps: false,
-        undescored: true,
+        underscored: true,
         modelName: 'user'
       }
     );

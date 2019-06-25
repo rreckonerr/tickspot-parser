@@ -290,7 +290,7 @@ class TickApi {
       }
 
       this.projects = projects;
-      logger.info(`Successfully downloaded projects fro ${this.user}.`);
+      logger.info(`Successfully downloaded projects for ${this.user}.`);
       return [null, projects];
     } catch (error) {
       console.error(`Ooops`, error.message || error);

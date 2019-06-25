@@ -1,3 +1,8 @@
 import server from './server';
+import postRequests from './post-requests';
+import { logger } from './helpers';
 
-server();
+logger.verbose('Starting the app.');
+
+postRequests();
+// server();
