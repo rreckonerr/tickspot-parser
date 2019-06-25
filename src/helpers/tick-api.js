@@ -50,8 +50,44 @@ class TickApi {
     }
   }
 
+  async createEntry(data = null) {
+    if (!data) return ['No entry data provided'];
+
+    const { subscription_id, api_token } = this.role;
+    // TODO: add validation
+    const { date, hours, notes, task_id, user_id } = data;
+
+    const options = {
+      url: `${this.apiRoot}/${subscription_id}/${this.apiName}/entries.json`,
+      headers: {
+        Authorization: `Token token=${api_token}`,
+        'User-Agent': this.agent
+      },
+      body: {
+        entry: {
+          date,
+          hours,
+          notes,
+          task_id,
+          user_id
+        }
+      },
+      json: true
+    };
+
+    try {
+      const newEntry = await this.postRequest(options);
+
+      return [null, newEntry];
+    } catch (error) {
+      logger.error(`Failed to POST entry ${notes}`, {
+        reason: error.message || error
+      });
+    }
+  }
+
   async createTask(data = null) {
-    if (!data) return ['No data provided'];
+    if (!data) return ['No task data provided'];
 
     const { subscription_id, api_token } = this.role;
     // TODO: add validation

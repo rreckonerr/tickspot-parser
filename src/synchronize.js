@@ -1,6 +1,12 @@
 import config from './config';
 import { TickSource, TickTarget, logger } from './helpers';
-import { ProjectCtrl, UserCtrl, ClientCtrl, TaskCtrl } from './controllers';
+import {
+  ProjectCtrl,
+  UserCtrl,
+  ClientCtrl,
+  TaskCtrl,
+  EntryCtrl
+} from './controllers';
 
 const initTickApi = async () => {
   const {
@@ -61,6 +67,7 @@ const synchronizeProjects = async () => {
     console.log('---target-projects', targetProjects);
 
     // TODO: update db with the new projects data
+    logger.info(`Created ${targetProjects.length} projects successfully`);
 
     return [null, targetProjects];
   } catch (error) {
@@ -138,7 +145,6 @@ const synchronizeUsers = async () => {
 
     const sourceUsers = sourceUsersRaw.map(user => user.get({ plain: true }));
 
-    console.log('--source-users', sourceUsers);
     const targetUsers = [];
     for await (const targetUser of createTargetUsers(sourceUsers)) {
       if (targetUser) targetUsers.push(targetUser);
@@ -146,6 +152,7 @@ const synchronizeUsers = async () => {
 
     console.log('---target-users', targetUsers);
 
+    logger.info(`Created ${targetUsers.length} users successfully`);
     // TODO: update db with the new data.
     return [null, targetUsers];
   } catch (error) {
@@ -213,7 +220,9 @@ const synchronizeClients = async () => {
     for await (const targetClient of createTargetClients(sourceClients)) {
       if (targetClient) targetClients.push(targetClient);
     }
+
     console.log('---target-clients', targetClients);
+    logger.info(`Created ${targetClients.length} clients successfully`);
 
     // ? response example
     // { id: 375015,
@@ -287,6 +296,7 @@ const synchronizeTasks = async () => {
     }
 
     console.log('---target-tasks', targetTasks);
+    logger.info(`Created ${targetTasks.length} tasks successfully`);
 
     // TODO: update db with the new data
     return [null, targetTasks];
@@ -328,13 +338,89 @@ async function* createTargetTasks(tasks) {
   }
 }
 
+const fetchAllEntriesFromDb = async () => {
+  try {
+    const entries = await EntryCtrl.fetchAllEntries();
+
+    return [null, entries];
+  } catch (error) {
+    return [
+      new Error('Failed to retreive entries from DB.', error.message || error)
+    ];
+  }
+};
+
+const synchronizeEntries = async () => {
+  try {
+    const [err, sourceEntriesRaw] = await fetchAllEntriesFromDb();
+    if (err) {
+      throw Error(`Failed to fetch all entries from DB`, err.message || err);
+    }
+
+    const sourceEntries = sourceEntriesRaw.map(entry =>
+      entry.get({ plain: true })
+    );
+
+    const targetEntries = [];
+
+    for await (const targetEntry of createTargetEntries(sourceEntries)) {
+      if (targetEntry) targetEntries.push(targetEntry);
+    }
+
+    console.log('---target-entries', targetEntries);
+
+    logger.info(`Created ${targetEntries.length} entries successfully`);
+
+    return [null, targetEntries];
+  } catch (error) {
+    logger.error(`Failed to syncronize entries.`, {
+      reason: error.message || error
+    });
+    process.exit(1);
+  }
+};
+
+async function* createTargetEntries(entries) {
+  let i = 0;
+  while (i < entries.length) {
+    const sourceEntry = entries[i];
+    const { date, hours, notes, task_id, user_id } = sourceEntry;
+
+    try {
+      const entryToCreate = {
+        date,
+        hours,
+        notes,
+        // ! add target task id
+        task_id,
+        // ! add target user id
+        user_id
+      };
+
+      const [err, targetEntry] = await TickTarget.createEntry(entryToCreate);
+      if (err) throw Error(err.message || err);
+
+      yield targetEntry;
+    } catch (error) {
+      logger.error(`Failed to create target entry for ${notes}`, {
+        reason: error.message || error
+      });
+      yield undefined;
+    } finally {
+      i++;
+    }
+  }
+}
+
 const init = async () => {
   try {
     await initTickApi();
-    // await synchronizeUsers();
-    // await synchronizeClients();
-    // await synchronizeProjects();
+
+    await synchronizeUsers();
+    await synchronizeClients();
+    await synchronizeProjects();
     await synchronizeTasks();
+    await synchronizeEntries();
   } catch (error) {
     logger.error(`Failed to synchronize`, { reason: error.message || error });
   }
