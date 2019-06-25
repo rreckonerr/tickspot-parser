@@ -6,9 +6,7 @@ export default class UserCtrl {
   }
 
   static async createUser(user) {
-    return await User.create({
-      ...project
-    });
+    return await User.create(user);
   }
 
   static async updateWithTargetUser(source_id, { id: target_id }) {

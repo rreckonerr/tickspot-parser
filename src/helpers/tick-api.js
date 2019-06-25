@@ -54,6 +54,7 @@ class TickApi {
     if (!data) return ['No data provided'];
 
     const { subscription_id, api_token } = this.role;
+    // TODO: add validation
     const {
       name,
       budget,
@@ -71,15 +72,17 @@ class TickApi {
         Authorization: `Token token=${api_token}`,
         'User-Agent': this.agent
       },
-      project: {
-        name,
-        budget,
-        date_closed,
-        notifications,
-        billable,
-        recurring,
-        client_id,
-        owner_id
+      body: {
+        project: {
+          name,
+          budget,
+          date_closed,
+          notifications,
+          billable,
+          recurring,
+          client_id,
+          owner_id
+        }
       },
       json: true
     };
@@ -240,7 +243,7 @@ class TickApi {
     if (!user) return ['No user data provided'];
 
     const { subscription_id, api_token } = this.role;
-
+    // TODO: add validation
     const { first_name, last_name, email, admin, billable_rate } = user;
 
     const options = {
@@ -267,6 +270,40 @@ class TickApi {
       return [null, newUser];
     } catch (error) {
       logger.error(`Failed to POST user ${email} to target`, {
+        reason: error.message || error
+      });
+      return [error.message || error];
+    }
+  }
+
+  async createClient(client = null) {
+    if (!client) return ['No client data provided'];
+
+    const { subscription_id, api_token } = this.role;
+    // TODO: add validation
+    const { name, archive } = client;
+
+    const options = {
+      url: `${this.apiRoot}/${subscription_id}/${this.apiName}/clients.json`,
+      headers: {
+        Authorization: `Token token=${api_token}`,
+        'User-Agent': this.agent
+      },
+      body: {
+        client: {
+          name,
+          archive
+        }
+      },
+      json: true
+    };
+
+    try {
+      const newClient = await this.postRequest(options);
+
+      return [null, newClient];
+    } catch (error) {
+      logger.error(`Failed to POST client ${name} to target`, {
         reason: error.message || error
       });
       return [error.message || error];
