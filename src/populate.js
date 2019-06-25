@@ -9,7 +9,7 @@ const init = async () => {
   const { sourceLogin, sourcePassword, sourceUserAgent } = config.secrets;
   const { targetLogin, targetPassword, targetUserAgent } = config.secrets;
 
-  const [err0, roles] = await TickSource.init(
+  const [err0, sourceRole] = await TickSource.init(
     sourceLogin,
     sourcePassword,
     sourceUserAgent
@@ -20,18 +20,18 @@ const init = async () => {
     });
   }
 
-  Object.values(roles).forEach(({ subscription_id, company, api_token }) => {
-    const role = { id: subscription_id, company, api_token };
-    Subscription.create(role)
-      .then(() => {
-        logger.info(`Subscription ${role.company} created succesfully!`);
-      })
-      .catch(err => {
-        logger.error('Failed to create subscr', { reason: err.message || err });
-      });
-  });
+  const { subscription_id, company, api_token } = sourceRole;
+  const dbRole = { id: subscription_id, company, api_token };
 
-  const [err01, roles2] = await TickTarget.init(
+  Subscription.create(dbRole)
+    .then(() => {
+      logger.info(`Subscription ${sourceRole.company} created succesfully!`);
+    })
+    .catch(err => {
+      logger.error('Failed to create subscr', { reason: err.message || err });
+    });
+
+  const [err01, targetRole] = await TickTarget.init(
     targetLogin,
     targetPassword,
     targetUserAgent
@@ -70,21 +70,33 @@ const init = async () => {
     });
   }
 
-  entries.forEach(([subscription_id, entryKeyVal]) => {
-    Object.entries(entryKeyVal).forEach(([proj_id, entries]) => {
-      entries.forEach(entry => {
-        Entry.create(entry)
-          .then(() => {
-            logger.info(`Entry ${entry.id} created succesfully!`);
-          })
-          .catch(err => {
-            logger.error(`Failed to create entry ${entry.id}`, {
-              reason: err.message || err
-            });
-          });
+  entries.forEach(entry => {
+    Entry.create(entry)
+      .then(() => {
+        logger.info(`Entry ${entry.id} created succesfully!`);
+      })
+      .catch(err => {
+        logger.error(`Failed to create entry ${entry.id}`, {
+          reason: err.message || err
+        });
       });
-    });
   });
+
+  // entries.forEach(([subscription_id, entryKeyVal]) => {
+  //   Object.entries(entryKeyVal).forEach(([proj_id, entries]) => {
+  //     entries.forEach(entry => {
+  //       Entry.create(entry)
+  //         .then(() => {
+  //           logger.info(`Entry ${entry.id} created succesfully!`);
+  //         })
+  //         .catch(err => {
+  //           logger.error(`Failed to create entry ${entry.id}`, {
+  //             reason: err.message || err
+  //           });
+  //         });
+  //     });
+  //   });
+  // });
 
   const [err3, users] = await TickSource.getAllUsers();
   if (err3) {
@@ -93,19 +105,30 @@ const init = async () => {
     });
   }
 
-  Object.entries(users).forEach(([subscription_id, usersArr]) => {
-    usersArr.forEach(user => {
-      User.create({ ...user, subscription_id })
-        .then(() => {
-          logger.info(`User ${user.email} created succesfully!`);
-        })
-        .catch(err => {
-          logger.error(`Failed to create user ${user.email}`, {
-            reason: err.message || err
-          });
+  users.forEach(user => {
+    User.create({ ...user, subscription_id: sourceRole.subscription_id })
+      .then(() => {
+        logger.info(`User ${user.email} created succesfully!`);
+      })
+      .catch(err => {
+        logger.error(`Failed to create user ${user.email}`, {
+          reason: err.message || err
         });
-    });
+      });
   });
+  // Object.entries(users).forEach(([subscription_id, usersArr]) => {
+  //   usersArr.forEach(user => {
+  //     User.create({ ...user, subscription_id })
+  //       .then(() => {
+  //         logger.info(`User ${user.email} created succesfully!`);
+  //       })
+  //       .catch(err => {
+  //         logger.error(`Failed to create user ${user.email}`, {
+  //           reason: err.message || err
+  //         });
+  //       });
+  //   });
+  // });
 
   const [err4, tasks] = await TickSource.getAllTasks();
   if (err4) {
