@@ -50,6 +50,43 @@ class TickApi {
     }
   }
 
+  async createTask(data = null) {
+    if (!data) return ['No data provided'];
+
+    const { subscription_id, api_token } = this.role;
+    // TODO: add validation
+    const { name, budget, project_id, billable } = data;
+
+    const options = {
+      url: `${this.apiRoot}/${subscription_id}/${this.apiName}/tasks.json`,
+      headers: {
+        Authorization: `Token token=${api_token}`,
+        'User-Agent': this.agent
+      },
+      body: {
+        task: {
+          name,
+          budget,
+          project_id,
+          billable
+        }
+      },
+      json: true
+    };
+
+    try {
+      const newTask = await this.postRequest(options);
+
+      return [null, newTask];
+    } catch (error) {
+      logger.error(`Failed to POST task ${name}`, {
+        reason: error.message || error
+      });
+
+      return [error.message || error];
+    }
+  }
+
   async createProject(data = null) {
     if (!data) return ['No data provided'];
 

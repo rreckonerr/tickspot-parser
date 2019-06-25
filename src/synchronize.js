@@ -1,6 +1,6 @@
 import config from './config';
 import { TickSource, TickTarget, logger } from './helpers';
-import { ProjectCtrl, UserCtrl, ClientCtrl } from './controllers';
+import { ProjectCtrl, UserCtrl, ClientCtrl, TaskCtrl } from './controllers';
 
 const initTickApi = async () => {
   const {
@@ -11,18 +11,6 @@ const initTickApi = async () => {
     // targetPassword,
     // targetUserAgent
   } = config.secrets;
-
-  // const [err0, sourceRole] = await TickSource.init(
-  //   sourceLogin,
-  //   sourcePassword,
-  //   sourceUserAgent
-  // );
-  // try {
-  //   if (err0) throw Error(`Failed to init Tick Source`, err0.message || err0);
-  // } catch (error) {
-  //   logger.error(`Exit code 1`, { reason: error.message || error });
-  //   process.exit(1);
-  // }
 
   const [err1, targetRole] = await TickTarget.init(
     sourceLogin,
@@ -205,7 +193,9 @@ const fetchAllClientsFromDb = async () => {
 
     return [null, clients];
   } catch (error) {
-    return [error.message || error];
+    return [
+      new Error('Failed to retreive clients from DB.', error.message || error)
+    ];
   }
 };
 
@@ -245,11 +235,10 @@ const synchronizeClients = async () => {
 async function* createTargetClients(clients) {
   let i = 0;
   while (i < clients.length) {
+    const sourceClient = clients[i];
+    const { name, archived } = sourceClient;
+
     try {
-      const sourceClient = clients[i];
-
-      const { name, archived } = sourceClient;
-
       const clientToCreate = {
         name,
         archived: archived ? archived : false
@@ -270,12 +259,82 @@ async function* createTargetClients(clients) {
   }
 }
 
+const fetchAllTasksFromDb = async () => {
+  try {
+    const tasks = await TaskCtrl.fetchAllTasks();
+
+    return [null, tasks];
+  } catch (error) {
+    return [
+      new Error('Failed to retrieve tasks from DB.', error.message || error)
+    ];
+  }
+};
+
+const synchronizeTasks = async () => {
+  try {
+    const [err, sourceTasksRaw] = await fetchAllTasksFromDb();
+    if (err) {
+      throw Error(`Failed to fetch all tasks from DB.`, err.message || err);
+    }
+
+    const sourceTasks = sourceTasksRaw.map(task => task.get({ plain: true }));
+
+    const targetTasks = [];
+
+    for await (const targetTask of createTargetTasks(sourceTasks)) {
+      if (targetTask) targetTasks.push(targetTask);
+    }
+
+    console.log('---target-tasks', targetTasks);
+
+    // TODO: update db with the new data
+    return [null, targetTasks];
+  } catch (error) {
+    logger.error(`Failed to syncronize tasks.`, {
+      reason: error.message || error
+    });
+    process.exit(1);
+  }
+};
+
+async function* createTargetTasks(tasks) {
+  let i = 0;
+  while (i < tasks.length) {
+    const sourceTask = tasks[i];
+    const { name, budget, project_id, billable } = sourceTask;
+
+    try {
+      const taskToCreate = {
+        name,
+        budget,
+        // ! add real target project id
+        project_id,
+        billable: Boolean(billable)
+      };
+
+      const [err, targetTask] = await TickTarget.createTask(taskToCreate);
+      if (err) throw Error(err.message || err);
+
+      yield targetTask;
+    } catch (error) {
+      logger.error(`Failed to create target task for ${sourceTask[i].name}`, {
+        reason: error.message || error
+      });
+      yield undefined;
+    } finally {
+      i++;
+    }
+  }
+}
+
 const init = async () => {
   try {
     await initTickApi();
     // await synchronizeUsers();
     // await synchronizeClients();
-    await synchronizeProjects();
+    // await synchronizeProjects();
+    await synchronizeTasks();
   } catch (error) {
     logger.error(`Failed to synchronize`, { reason: error.message || error });
   }
