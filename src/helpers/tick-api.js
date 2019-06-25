@@ -1,6 +1,7 @@
 import request from 'request-promise';
 import prompts from 'prompts';
 import { logger } from '../helpers';
+import postRequests from '../post-requests';
 
 class TickApi {
   constructor(type = '') {
@@ -17,7 +18,7 @@ class TickApi {
     this.pass = '';
     this.agent = '';
 
-    this.roles = null;
+    this.role = null;
     this.projects = null;
     this.entries = null;
   }
@@ -34,17 +35,61 @@ class TickApi {
       this.agent = agent;
 
       const roles = await this.authorize();
-
       const role = await this.askUserRole(roles);
 
       this.role = role;
 
-      // console.log('---init-success', this.roles);
       logger.verbose(`TickApi for ${user} is ready and has roles.`);
       return [null, this.role];
     } catch (error) {
       console.error('Failed to init', error.message || error);
       return [error];
+    }
+  }
+
+  async createProject(data = null) {
+    if (!data) return ['No data provided'];
+
+    const { subscription_id, api_token } = this.role;
+    const {
+      name,
+      budget,
+      date_closed,
+      notifications,
+      billable,
+      recurring,
+      client_id,
+      owner_id
+    } = data;
+
+    const options = {
+      url: `${this.apiRoot}/${subscription_id}/${this.apiName}/projects.json`,
+      headers: {
+        Authorization: `Token token=${api_token}`,
+        'User-Agent': this.agent
+      },
+      project: {
+        name,
+        budget,
+        date_closed,
+        notifications,
+        billable,
+        recurring,
+        client_id,
+        owner_id
+      },
+      json: true
+    };
+
+    try {
+      const newProject = await this.postRequest(options);
+
+      return [null, newProject];
+    } catch (error) {
+      logger.error(`Failed to post project ${data.id}`, {
+        reason: error.message || error
+      });
+      return [error.message || error];
     }
   }
 
@@ -54,12 +99,15 @@ class TickApi {
       return acc;
     }, []);
 
-    const response = await prompts({
-      type: 'select',
-      name: 'selected_id',
-      message: `Select subscription for the ${this.type}.`,
-      choices
-    });
+    const response = await prompts(
+      {
+        type: 'select',
+        name: 'selected_id',
+        message: `Select subscription for the ${this.type}.`,
+        choices
+      },
+      { onCancel: () => process.exit(1) }
+    );
 
     const { selected_id } = response;
 
@@ -344,7 +392,7 @@ class TickApi {
 
   async getRequest(options = null) {
     if (!options) {
-      console.error(`No options provided`);
+      logger.error(`No options provided`);
       return [];
     }
     try {
@@ -352,7 +400,28 @@ class TickApi {
 
       return data;
     } catch (error) {
-      console.error(`Ooops... request failed`, error.message || error);
+      logger.error(`GET request failed`, {
+        reason: error.message || error,
+        metadata: options
+      });
+      return [];
+    }
+  }
+
+  async postRequest(options = null) {
+    if (!options) {
+      logger.error(`No options provided for post request`);
+      return [];
+    }
+    try {
+      const data = await request({ ...options, method: 'POST' });
+
+      return data;
+    } catch (error) {
+      logger.error(`POST request failed`, {
+        reason: error.message || error,
+        metadata: options
+      });
       return [];
     }
   }

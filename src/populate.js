@@ -3,11 +3,16 @@ import { TickSource, TickTarget, logger } from './helpers';
 import { Subscription, Project, User, Entry, Task } from './models';
 import { ProjectCtrl } from './controllers';
 
-// TODO: add logger
 const init = async () => {
   logger.info('Starting the app!');
-  const { sourceLogin, sourcePassword, sourceUserAgent } = config.secrets;
-  const { targetLogin, targetPassword, targetUserAgent } = config.secrets;
+  const {
+    sourceLogin,
+    sourcePassword,
+    sourceUserAgent,
+    targetLogin,
+    targetPassword,
+    targetUserAgent
+  } = config.secrets;
 
   const [err0, sourceRole] = await TickSource.init(
     sourceLogin,
@@ -47,6 +52,8 @@ const init = async () => {
     logger.error(`Tatata`, { reason: err1.message || err1 });
   }
 
+  console.log('---project-available', projects);
+
   Object.entries(projects).forEach(([subscription_id, projectsArr]) => {
     projectsArr.forEach(project => {
       ProjectCtrl.createProject(project, subscription_id)
@@ -82,28 +89,14 @@ const init = async () => {
       });
   });
 
-  // entries.forEach(([subscription_id, entryKeyVal]) => {
-  //   Object.entries(entryKeyVal).forEach(([proj_id, entries]) => {
-  //     entries.forEach(entry => {
-  //       Entry.create(entry)
-  //         .then(() => {
-  //           logger.info(`Entry ${entry.id} created succesfully!`);
-  //         })
-  //         .catch(err => {
-  //           logger.error(`Failed to create entry ${entry.id}`, {
-  //             reason: err.message || err
-  //           });
-  //         });
-  //     });
-  //   });
-  // });
-
   const [err3, users] = await TickSource.getAllUsers();
   if (err3) {
     logger.error('Failed to get source users', {
       reason: err3.message || err3
     });
   }
+
+  console.log('---users-available', users);
 
   users.forEach(user => {
     User.create({ ...user, subscription_id: sourceRole.subscription_id })
@@ -116,19 +109,6 @@ const init = async () => {
         });
       });
   });
-  // Object.entries(users).forEach(([subscription_id, usersArr]) => {
-  //   usersArr.forEach(user => {
-  //     User.create({ ...user, subscription_id })
-  //       .then(() => {
-  //         logger.info(`User ${user.email} created succesfully!`);
-  //       })
-  //       .catch(err => {
-  //         logger.error(`Failed to create user ${user.email}`, {
-  //           reason: err.message || err
-  //         });
-  //       });
-  //   });
-  // });
 
   const [err4, tasks] = await TickSource.getAllTasks();
   if (err4) {
