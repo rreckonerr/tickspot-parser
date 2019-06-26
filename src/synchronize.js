@@ -9,19 +9,12 @@ import {
 } from './controllers';
 
 const initTickApi = async () => {
-  const {
-    sourceLogin,
-    sourcePassword,
-    sourceUserAgent
-    // targetLogin,
-    // targetPassword,
-    // targetUserAgent
-  } = config.secrets;
+  const { targetLogin, targetPassword, targetUserAgent } = config.secrets;
 
   const [err1, targetRole] = await TickTarget.init(
-    sourceLogin,
-    sourcePassword,
-    sourceUserAgent
+    targetLogin,
+    targetPassword,
+    targetUserAgent
   );
   try {
     if (err1) throw Error(`Failed to init Tick Target`, err1.message || err1);
