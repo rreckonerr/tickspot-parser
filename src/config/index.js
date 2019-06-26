@@ -25,7 +25,8 @@ const baseConfig = {
     database: '',
     username: '',
     password: '',
-    dialect: ''
+    dialect: '',
+    logging: false
   }
 };
 

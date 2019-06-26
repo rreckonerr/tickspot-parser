@@ -1,4 +1,5 @@
 import { Project } from '../models';
+import { logger } from '../helpers';
 
 export default class PropjectCtrl {
   static async fetchAllProjects() {
@@ -30,7 +31,7 @@ export default class PropjectCtrl {
               project,
               subscription_id
             );
-            if (err) throw new Error(err.message || error);
+            if (err) throw new Error(err.message || err);
             if (dbProject) res.push(dbProject);
           } catch (error) {
             logger.error(`Failed to save project ${project.name} to db`, {
