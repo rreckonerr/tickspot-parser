@@ -173,7 +173,7 @@ const populateUsers = async subscription_id => {
     const [err, sourceUsers] = await TickSource.getAllUsers();
     if (err) {
       throw Error(
-        `Failed to get all users fot the source. ` + err.message || err
+        `Failed to get all users for the source. ` + err.message || err
       );
     }
 
@@ -198,12 +198,45 @@ const populateUsers = async subscription_id => {
   }
 };
 
+const populateClients = async subscription_id => {
+  try {
+    if (!subscription_id) throw Error(`Must provide subscription_id`);
+
+    const [err, sourceClients] = await TickSource.getAllClients();
+    if (err) {
+      throw Error(
+        `Failed to get all clients for the source. ` + err.message || err
+      );
+    }
+
+    const [err1, dbClients] = await ClientCtrl.createClients(
+      sourceClients,
+      subscription_id
+    );
+    if (err1) {
+      throw Error(`Failed to add clients to the db. `, err1.message || err1);
+    }
+
+    logger.info(
+      `Successfully added ${dbClients.length} of ${sourceClients.length} clients to the db.`
+    );
+
+    return dbClients;
+  } catch (error) {
+    logger.error(`Failed to populate clients table`, {
+      reason: error.message || error
+    });
+    // process.exit(1);
+  }
+};
+
 const init = async () => {
   try {
     const subscription_id = await populateSubscriptions();
-    const dbUsers = await populateUsers(subscription_id);
-    const dbProjects = await populateProjects(subscription_id);
+    const dbClients = await populateClients(subscription_id);
+    // const dbUsers = await populateUsers(subscription_id);
 
+    // const dbProjects = await populateProjects(subscription_id);
     // const fromDate = '2019-06-01';
 
     // const [err2, entries] = await TickSource.getAllEntries(fromDate);

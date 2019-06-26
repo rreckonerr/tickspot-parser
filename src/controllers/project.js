@@ -5,6 +5,19 @@ export default class PropjectCtrl {
     return await Project.findAll();
   }
 
+  static async createProject(project, subscription_id) {
+    try {
+      const dbProject = await Project.create({
+        ...project,
+        subscription_id: +subscription_id
+      });
+
+      return [null, dbProject];
+    } catch (error) {
+      return [error.message || error];
+    }
+  }
+
   static async createProjects(projects, subscription_id) {
     try {
       let i = 0;
@@ -35,19 +48,6 @@ export default class PropjectCtrl {
         reason: error.message || error
       });
       return [error];
-    }
-  }
-
-  static async createProject(project, subscription_id) {
-    try {
-      const dbProject = await Project.create({
-        ...project,
-        subscription_id: +subscription_id
-      });
-
-      return [null, dbProject];
-    } catch (error) {
-      return [error.message || error];
     }
   }
 
