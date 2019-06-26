@@ -1,7 +1,6 @@
 import request from 'request-promise';
 import prompts from 'prompts';
 import { logger } from '../helpers';
-import postRequests from '../post-requests';
 
 class TickApi {
   constructor(type = '') {
@@ -50,10 +49,91 @@ class TickApi {
     }
   }
 
+  getSubscriptionId() {
+    if (!this.role) throw new Error(`Must init ${this.type} project first.`);
+    const { subscription_id } = this.role;
+
+    return subscription_id;
+  }
+
+  async createEntry(data = null) {
+    if (!data) return ['No entry data provided'];
+
+    const { subscription_id, api_token } = this.role;
+    // TODO: add validation
+    const { date, hours, notes, task_id, user_id } = data;
+
+    const options = {
+      url: `${this.apiRoot}/${subscription_id}/${this.apiName}/entries.json`,
+      headers: {
+        Authorization: `Token token=${api_token}`,
+        'User-Agent': this.agent
+      },
+      body: {
+        entry: {
+          date,
+          hours,
+          notes,
+          task_id,
+          user_id
+        }
+      },
+      json: true
+    };
+
+    try {
+      const newEntry = await this.postRequest(options);
+
+      return [null, newEntry];
+    } catch (error) {
+      logger.error(`Failed to POST entry ${notes}`, {
+        reason: error.message || error
+      });
+    }
+  }
+
+  async createTask(data = null) {
+    if (!data) return ['No task data provided'];
+
+    const { subscription_id, api_token } = this.role;
+    // TODO: add validation
+    const { name, budget, project_id, billable } = data;
+
+    const options = {
+      url: `${this.apiRoot}/${subscription_id}/${this.apiName}/tasks.json`,
+      headers: {
+        Authorization: `Token token=${api_token}`,
+        'User-Agent': this.agent
+      },
+      body: {
+        task: {
+          name,
+          budget,
+          project_id,
+          billable
+        }
+      },
+      json: true
+    };
+
+    try {
+      const newTask = await this.postRequest(options);
+
+      return [null, newTask];
+    } catch (error) {
+      logger.error(`Failed to POST task ${name}`, {
+        reason: error.message || error
+      });
+
+      return [error.message || error];
+    }
+  }
+
   async createProject(data = null) {
     if (!data) return ['No data provided'];
 
     const { subscription_id, api_token } = this.role;
+    // TODO: add validation
     const {
       name,
       budget,
@@ -71,15 +151,17 @@ class TickApi {
         Authorization: `Token token=${api_token}`,
         'User-Agent': this.agent
       },
-      project: {
-        name,
-        budget,
-        date_closed,
-        notifications,
-        billable,
-        recurring,
-        client_id,
-        owner_id
+      body: {
+        project: {
+          name,
+          budget,
+          date_closed,
+          notifications,
+          billable,
+          recurring,
+          client_id,
+          owner_id
+        }
       },
       json: true
     };
@@ -240,7 +322,7 @@ class TickApi {
     if (!user) return ['No user data provided'];
 
     const { subscription_id, api_token } = this.role;
-
+    // TODO: add validation
     const { first_name, last_name, email, admin, billable_rate } = user;
 
     const options = {
@@ -267,6 +349,40 @@ class TickApi {
       return [null, newUser];
     } catch (error) {
       logger.error(`Failed to POST user ${email} to target`, {
+        reason: error.message || error
+      });
+      return [error.message || error];
+    }
+  }
+
+  async createClient(client = null) {
+    if (!client) return ['No client data provided'];
+
+    const { subscription_id, api_token } = this.role;
+    // TODO: add validation
+    const { name, archive } = client;
+
+    const options = {
+      url: `${this.apiRoot}/${subscription_id}/${this.apiName}/clients.json`,
+      headers: {
+        Authorization: `Token token=${api_token}`,
+        'User-Agent': this.agent
+      },
+      body: {
+        client: {
+          name,
+          archive
+        }
+      },
+      json: true
+    };
+
+    try {
+      const newClient = await this.postRequest(options);
+
+      return [null, newClient];
+    } catch (error) {
+      logger.error(`Failed to POST client ${name} to target`, {
         reason: error.message || error
       });
       return [error.message || error];

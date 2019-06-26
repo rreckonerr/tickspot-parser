@@ -29,6 +29,7 @@ export const config = {
     database: DB_DATABASE,
     username: DB_USERNAME,
     password: DB_PASSWORD,
-    dialect: DB_DIALECT
+    dialect: DB_DIALECT,
+    logging: true
   }
 };

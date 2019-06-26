@@ -8,11 +8,20 @@ import Entry from './entry';
 import Task from './task';
 import Client from './client';
 
-const { database, username, password, host, dialect, port } = config.db;
+const {
+  database,
+  username,
+  password,
+  host,
+  dialect,
+  port,
+  logging
+} = config.db;
 
 const sequelize = new Sequelize.Sequelize(database, username, password, {
   host,
   dialect,
+  logging,
   port: parseInt(port, 10)
 });
 

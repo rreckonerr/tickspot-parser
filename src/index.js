@@ -1,5 +1,4 @@
 import populate from './populate';
-import postRequests from './post-requests';
 import synchronize from './synchronize';
 import { logger } from './helpers';
 import prompts from 'prompts';
@@ -25,8 +24,8 @@ const askUserForAction = async () => {
 };
 
 const handler = async () => {
-  // const userAction = await askUserForAction();
-  const userAction = await Promise.resolve('synchronize');
+  const userAction = await askUserForAction();
+  // const userAction = await Promise.resolve('synchronize');
 
   switch (userAction) {
     case 'populate':

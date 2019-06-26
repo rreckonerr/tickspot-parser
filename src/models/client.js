@@ -22,6 +22,10 @@ export default class Client extends Sequelize.Model {
           allowNull: false,
           type: DataTypes.STRING
         },
+        subscription_id: {
+          allowNull: false,
+          type: DataTypes.INTEGER
+        },
         updated_at: {
           allowNull: false,
           type: DataTypes.DATE
