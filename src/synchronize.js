@@ -423,6 +423,7 @@ const init = async () => {
     await synchronizeEntries();
   } catch (error) {
     logger.error(`Failed to synchronize`, { reason: error.message || error });
+    process.exit(1);
   }
 };
 

@@ -1,6 +1,14 @@
 import config from './config';
 import { TickSource, logger } from './helpers';
 import { Subscription, Project, User, Entry, Task, Client } from './models';
+import {
+  ProjectCtrl,
+  UserCtrl,
+  ClientCtrl,
+  TaskCtrl,
+  EntryCtrl,
+  SubscriptionCtrl
+} from './controllers';
 
 const saveClientsToDb = async clients => {
   return await clients.forEach(async client => {
@@ -84,83 +92,156 @@ const saveSubscriptionToDb = async role => {
     });
 };
 
-const init = async () => {
+const populateSubscriptions = async () => {
   try {
-    logger.info('Starting the app!');
-    const {
-      sourceLogin,
-      sourcePassword,
-      sourceUserAgent
-      // targetLogin,
-      // targetPassword,
-      // targetUserAgent
-    } = config.secrets;
-
-    const [err0, sourceRole] = await TickSource.init(
+    const { sourceLogin, sourcePassword, sourceUserAgent } = config.secrets;
+    const [err, sourceRole] = await TickSource.init(
       sourceLogin,
       sourcePassword,
       sourceUserAgent
     );
-    if (err0) {
+    if (err) {
       logger.error(`Failed to init TickSource`, {
-        reason: err0.message || err0
+        reason: err.message || err
       });
+      throw new Error(err.message || err);
     }
 
     const { subscription_id, company, api_token } = sourceRole;
     const dbRole = { id: subscription_id, company, api_token };
 
     // console.log('---sourceRole', sourceRole);
-    await saveSubscriptionToDb(dbRole);
-
-    const [err1, sourceProjects] = await TickSource.getAllProjects();
+    const [err1, dbSubscription] = await SubscriptionCtrl.createSubscription(
+      dbRole
+    );
     if (err1) {
-      logger.error(`Failed to get all projects for source`, {
+      logger.error(`Failed to save subscription to db`, {
         reason: err1.message || err1
       });
+      throw new Error(err1.message || err1);
     }
 
-    // console.log('---source-projects', sourceProjects);
-    await saveProjectsToDb(sourceProjects, subscription_id);
+    logger.info(
+      `Successfully added ${dbSubscription.company} subscription to the db.`
+    );
 
-    const fromDate = '2019-06-01';
+    return subscription_id;
+  } catch (error) {
+    logger.error(`Failed to populate subscriptions table.`, {
+      reason: error.message || error
+    });
+    return TickSource.getSubscriptionId();
+    // process.exit(1);
+  }
+};
 
-    const [err2, entries] = await TickSource.getAllEntries(fromDate);
-    if (err2) {
-      logger.error(`Failed to get source entries`, {
-        reason: err2.message || err2
+const populateProjects = async subscription_id => {
+  try {
+    if (!subscription_id) throw Error(`Must provide subscription_id`);
+
+    const [err, sourceProjects] = await TickSource.getAllProjects();
+    if (err) {
+      logger.error(`Failed to get all projects for source`, {
+        reason: err.message || err
       });
+      throw new Error(err.message || err);
     }
 
-    // console.log('---entries', entries);
-    await saveEntriesToDb(entries);
+    const [err1, dbProjects] = await ProjectCtrl.createProjects(
+      sourceProjects,
+      subscription_id
+    );
+    if (err1) throw Error(err1.message || err1);
 
-    const [err3, users] = await TickSource.getAllUsers();
-    if (err3) {
-      logger.error('Failed to get source users', {
-        reason: err3.message || err3
-      });
+    logger.info(
+      `Successfully added ${dbProjects.length} of ${sourceProjects.length} projects to the db.`
+    );
+
+    return dbProjects;
+  } catch (error) {
+    logger.error(`Failed to populate projects table.`, {
+      reason: error.message || error
+    });
+    // process.exit(1);
+  }
+};
+
+const populateUsers = async subscription_id => {
+  try {
+    if (!subscription_id) throw Error(`Must provide subscription_id.`);
+
+    const [err, sourceUsers] = await TickSource.getAllUsers();
+    if (err) {
+      throw Error(
+        `Failed to get all users fot the source. ` + err.message || err
+      );
     }
 
-    // console.log('---users', users);
-    await saveUsersToDb(users, subscription_id);
-
-    const [err4, tasks] = await TickSource.getAllTasks();
-    if (err4) {
-      logger.error('Failed to get all tasks', {
-        reason: err4.message || err4
-      });
+    const [err1, dbUsers] = await UserCtrl.createUsers(
+      sourceUsers,
+      subscription_id
+    );
+    if (err1) {
+      throw Error(`Failed to add users to the db. ` + err1.message || err1);
     }
 
-    // console.log('---tasks', tasks);
-    await saveTasksToDb(tasks);
+    logger.info(
+      `Successfully added ${dbUsers.length} of ${sourceUsers.length} users to the db.`
+    );
 
-    const [err5, clients] = await TickSource.getAllClients();
-    if (err5) {
-      logger.error(`Failed to get clients`, { reason: err5.message || err5 });
-    }
-    // console.log('---clients', clients);
-    await saveClientsToDb(clients);
+    return dbUsers;
+  } catch (error) {
+    logger.error(`Failed to populate users table.`, {
+      reason: error.message || error
+    });
+    // process.exit(1);
+  }
+};
+
+const init = async () => {
+  try {
+    const subscription_id = await populateSubscriptions();
+    const dbUsers = await populateUsers(subscription_id);
+    const dbProjects = await populateProjects(subscription_id);
+
+    // const fromDate = '2019-06-01';
+
+    // const [err2, entries] = await TickSource.getAllEntries(fromDate);
+    // if (err2) {
+    //   logger.error(`Failed to get source entries`, {
+    //     reason: err2.message || err2
+    //   });
+    // }
+
+    // // console.log('---entries', entries);
+    // await saveEntriesToDb(entries);
+
+    // const [err3, users] = await TickSource.getAllUsers();
+    // if (err3) {
+    //   logger.error('Failed to get source users', {
+    //     reason: err3.message || err3
+    //   });
+    // }
+
+    // // console.log('---users', users);
+    // await saveUsersToDb(users, subscription_id);
+
+    // const [err4, tasks] = await TickSource.getAllTasks();
+    // if (err4) {
+    //   logger.error('Failed to get all tasks', {
+    //     reason: err4.message || err4
+    //   });
+    // }
+
+    // // console.log('---tasks', tasks);
+    // await saveTasksToDb(tasks);
+
+    // const [err5, clients] = await TickSource.getAllClients();
+    // if (err5) {
+    //   logger.error(`Failed to get clients`, { reason: err5.message || err5 });
+    // }
+    // // console.log('---clients', clients);
+    // await saveClientsToDb(clients);
   } catch (error) {
     logger.error(`Failed to populate!`, { reason: error.message || error });
     process.exit(1);

@@ -1,7 +1,6 @@
 import request from 'request-promise';
 import prompts from 'prompts';
 import { logger } from '../helpers';
-import postRequests from '../post-requests';
 
 class TickApi {
   constructor(type = '') {
@@ -48,6 +47,13 @@ class TickApi {
       console.error('Failed to init', error.message || error);
       return [error];
     }
+  }
+
+  getSubscriptionId() {
+    if (!this.role) throw new Error(`Must init ${this.type} project first.`);
+    const { subscription_id } = this.role;
+
+    return subscription_id;
   }
 
   async createEntry(data = null) {
