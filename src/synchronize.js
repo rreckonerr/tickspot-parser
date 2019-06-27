@@ -123,35 +123,22 @@ const synchronizeClients = async () => {
   }
 };
 
-const fetchAllTasksFromDb = async () => {
-  try {
-    const tasks = await TaskCtrl.fetchAllTasks();
-
-    return [null, tasks];
-  } catch (error) {
-    return [
-      new Error('Failed to retrieve tasks from DB.', error.message || error)
-    ];
-  }
-};
-
 const synchronizeTasks = async () => {
   try {
-    const [err, sourceTasksRaw] = await fetchAllTasksFromDb();
+    const [err, sourceDbTasksRaw] = await TaskCtrl.fetchAllTasks();
     if (err) {
       throw Error(`Failed to fetch all tasks from DB.`, err.message || err);
     }
 
-    const sourceTasks = sourceTasksRaw.map(task => task.get({ plain: true }));
+    const sourceTasks = sourceDbTasksRaw.map(task => task.get({ plain: true }));
 
-    const targetTasks = [];
-
-    for await (const targetTask of createTargetTasks(sourceTasks)) {
-      if (targetTask) targetTasks.push(targetTask);
+    const [err1, targetTasks] = await TickTarget.createTasks(sourceTasks);
+    if (err1) {
+      throw Error(`Failed to create clients in target` + err1.message || err1);
     }
 
     console.log('---target-tasks', targetTasks);
-    logger.info(`Created ${targetTasks.length} tasks successfully`);
+    logger.info(`Created ${targetTasks.length} of ${sourceTasks.length} tasks`);
 
     // TODO: update db with the new data
     return [null, targetTasks];
@@ -162,36 +149,6 @@ const synchronizeTasks = async () => {
     process.exit(1);
   }
 };
-
-async function* createTargetTasks(tasks) {
-  let i = 0;
-  while (i < tasks.length) {
-    const sourceTask = tasks[i];
-    const { name, budget, project_id, billable } = sourceTask;
-
-    try {
-      const taskToCreate = {
-        name,
-        budget,
-        // ! add real target project id
-        project_id,
-        billable: Boolean(billable)
-      };
-
-      const [err, targetTask] = await TickTarget.createTask(taskToCreate);
-      if (err) throw Error(err.message || err);
-
-      yield targetTask;
-    } catch (error) {
-      logger.error(`Failed to create target task for ${sourceTask[i].name}`, {
-        reason: error.message || error
-      });
-      yield undefined;
-    } finally {
-      i++;
-    }
-  }
-}
 
 const fetchAllEntriesFromDb = async () => {
   try {
@@ -273,8 +230,8 @@ const init = async () => {
 
     // await synchronizeUsers();
     // await synchronizeClients();
-    await synchronizeProjects();
-    // await synchronizeTasks();
+    // await synchronizeProjects();
+    await synchronizeTasks();
     // await synchronizeEntries();
   } catch (error) {
     logger.error(`Failed to synchronize`, { reason: error.message || error });

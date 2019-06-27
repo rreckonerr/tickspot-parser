@@ -361,8 +361,54 @@ class TickApi {
     }
   }
 
+  async createTasks(sourceTasks = null) {
+    try {
+      if (!sourceTasks) return [`No tasks provided`];
+      const targetTasks = [];
+
+      for await (const targetTask of this.createTasksGen(sourceTasks)) {
+        if (targetTask) targetTasks.push(targetTask);
+      }
+
+      return [null, targetTasks];
+    } catch (error) {
+      return [error.message || error];
+    }
+  }
+
+  async *createTasksGen(tasks) {
+    let i = 0;
+    while (i < tasks.length) {
+      const sourceTask = tasks[i];
+      const { name, budget, project_id, billable } = sourceTask;
+
+      try {
+        const taskToCreate = {
+          name,
+          budget,
+          // ! add real target project id
+          project_id,
+          billable: Boolean(billable)
+        };
+
+        const [err, targetTask] = await this.createTask(taskToCreate);
+        if (err) throw Error(err.message || err);
+
+        yield targetTask;
+      } catch (error) {
+        logger.error(`Failed to create target task for ${sourceTask[i].name}`, {
+          reason: error.message || error
+        });
+        yield undefined;
+      } finally {
+        i++;
+      }
+    }
+  }
+
   async createProjects(sourceProjects = null) {
     try {
+      if (!sourceProjects) return [`No projects provided`];
       const targetProjects = [];
       for await (const targetProject of this.createProjectsGen(
         sourceProjects
