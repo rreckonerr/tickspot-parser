@@ -1,5 +1,5 @@
 import config from './config';
-import { TickSource, TickTarget, logger } from './helpers';
+import { TickTarget, logger } from './helpers';
 import {
   ProjectCtrl,
   UserCtrl,
@@ -9,21 +9,22 @@ import {
 } from './controllers';
 
 const initTickApi = async () => {
-  const { targetLogin, targetPassword, targetUserAgent } = config.secrets;
-
-  const [err1, targetRole] = await TickTarget.init(
-    targetLogin,
-    targetPassword,
-    targetUserAgent
-  );
   try {
+    const { targetLogin, targetPassword, targetUserAgent } = config.secrets;
+
+    const [err1, targetRole] = await TickTarget.init(
+      targetLogin,
+      targetPassword,
+      targetUserAgent
+    );
     if (err1) throw Error(`Failed to init Tick Target`, err1.message || err1);
+
+    logger.info(`Initialized TickTarget!`);
+    return targetRole;
   } catch (error) {
     logger.error(`Exit code 1`, { reason: error.message || error });
     process.exit(1);
   }
-
-  return targetRole;
 };
 
 const synchronizeProjects = async () => {
@@ -45,14 +46,12 @@ const synchronizeProjects = async () => {
     if (err1)
       throw Error(`Failed to create projects in target`, err1.message || err1);
 
-    console.log('---target-projects', targetProjects);
-
     // TODO: update db with the new projects data
     logger.info(
       `Created ${targetProjects.length} of ${sourceProjects.length} projects`
     );
 
-    return [null, targetProjects];
+    return targetProjects;
   } catch (error) {
     logger.error(`Failed to synchronize projects.`, {
       reason: error.message || error
@@ -77,7 +76,7 @@ const synchronizeUsers = async () => {
 
     logger.info(`Created ${targetUsers.length} of ${sourceUsers.length} users`);
     // TODO: update db with the new data.
-    return [null, targetUsers];
+    return targetUsers;
   } catch (error) {
     logger.error(`Failed to synchronize users.`, {
       reason: error || error.message
@@ -101,7 +100,6 @@ const synchronizeClients = async () => {
       throw Error(`Failed to create clients in target`, err1.message || err1);
     }
 
-    console.log('---target-clients', targetClients);
     logger.info(
       `Created ${targetClients.length} of ${sourceClients.length} clients successfully`
     );
@@ -114,7 +112,7 @@ const synchronizeClients = async () => {
     //  'http://secure.tickspot.com/126919/api/v2/clients/375015.json',
     // updated_at: '2019-06-25T11:27:27.000-04:00' }
     // TODO: update db with the new relationships
-    return [null, targetClients];
+    return targetClients;
   } catch (error) {
     logger.error(`Failed to synchronize clients.`, {
       reason: error.message || error
@@ -137,11 +135,10 @@ const synchronizeTasks = async () => {
       throw Error(`Failed to create clients in target` + err1.message || err1);
     }
 
-    console.log('---target-tasks', targetTasks);
     logger.info(`Created ${targetTasks.length} of ${sourceTasks.length} tasks`);
 
     // TODO: update db with the new data
-    return [null, targetTasks];
+    return targetTasks;
   } catch (error) {
     logger.error(`Failed to syncronize tasks.`, {
       reason: error.message || error
@@ -166,13 +163,11 @@ const synchronizeEntries = async () => {
       throw Error(`Failed to create entries in target`, err1.message || err1);
     }
 
-    console.log('---target-entries', targetEntries);
-
     logger.info(
       `Created ${targetEntries.length} of ${sourceEntries.length} entries`
     );
 
-    return [null, targetEntries];
+    return targetEntries;
   } catch (error) {
     logger.error(`Failed to syncronize entries.`, {
       reason: error.message || error

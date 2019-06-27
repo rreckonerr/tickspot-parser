@@ -1,5 +1,6 @@
 import { TickSource, TickTarget, logger } from './helpers';
 import config from './config';
+import { SubscriptionCtrl } from './controllers';
 
 const getSourceRole = async () => {
   try {
@@ -34,8 +35,28 @@ const getTargetRole = async () => {
 };
 
 const linkSubscriptions = async () => {
-  const sourceRole = await getSourceRole();
-  const targetRole = await getTargetRole();
+  try {
+    const sourceRole = await getSourceRole();
+    const targetRole = await getTargetRole();
+
+    const { subscription_id: id, company, api_token } = sourceRole;
+    const { subscription_id: target_id } = targetRole;
+
+    const [err, sourceDbRole] = await SubscriptionCtrl.createSubscription({
+      id,
+      target_id,
+      company,
+      api_token
+    });
+
+    if (err) throw Error(`Failed to write role to the db`, err.message || err);
+
+    console.log('---created-role', sourceDbRole);
+  } catch (error) {
+    logger.error(`Failed to link subscriptions.`, {
+      reason: error.message || error
+    });
+  }
 };
 
 const initialize = async () => {

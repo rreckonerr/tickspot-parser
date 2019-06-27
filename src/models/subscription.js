@@ -17,6 +17,10 @@ export default class Subscription extends Sequelize.Model {
         api_token: {
           allowNull: false,
           type: DataTypes.STRING
+        },
+        target_id: {
+          allowNull: false,
+          type: DataTypes.INTEGER
         }
       },
       {
