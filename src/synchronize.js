@@ -118,33 +118,21 @@ async function* createTargetProjects(projects) {
   }
 }
 
-const fetchAllUsersFromDb = async () => {
-  try {
-    const users = await UserCtrl.fetchAllUsers();
-
-    return [null, users];
-  } catch (error) {
-    logger.error(`Failed to fetch users from db`, {
-      reason: error.message || error
-    });
-    return [error.message || error];
-  }
-};
-
 const synchronizeUsers = async () => {
   try {
-    const [err, sourceUsersRaw] = await fetchAllUsersFromDb();
-    if (err)
+    const [err, sourceDbUsersRaw] = await UserCtrl.fetchAllUsers();
+    if (err) {
       throw Error('Failed to fetch all users from DB ' + err.message || err);
+    }
 
-    const sourceUsers = sourceUsersRaw.map(user => user.get({ plain: true }));
+    const sourceUsers = sourceDbUsersRaw.map(user => user.get({ plain: true }));
 
     const [err1, targetUsers] = await TickTarget.createUsers(sourceUsers);
     if (err1) {
       throw Error(`Failed to create users in target. ` + err1.message || err1);
     }
 
-    logger.info(`Created ${targetUsers.length} users successfully`);
+    logger.info(`Created ${targetUsers.length} of ${sourceUsers.length} users`);
     // TODO: update db with the new data.
     return [null, targetUsers];
   } catch (error) {
@@ -154,37 +142,6 @@ const synchronizeUsers = async () => {
     process.exit(1);
   }
 };
-
-// async function* createTargetUsers(users) {
-//   let i = 0;
-//   while (i < users.length) {
-//     try {
-//       const sourceUser = users[i];
-
-//       const { first_name, last_name, email, admin, billable_rate } = sourceUser;
-
-//       const userToCreate = {
-//         first_name,
-//         last_name,
-//         email,
-//         admin: Boolean(admin),
-//         billable_rate
-//       };
-
-//       const [err, targetUser] = await TickTarget.createUser(userToCreate);
-//       if (err) throw Error(err.message || error);
-
-//       yield targetUser;
-//     } catch (error) {
-//       logger.error(`Failed to create target user for ${user[i].email}`, {
-//         reason: error.message || error
-//       });
-//       yield undefined;
-//     } finally {
-//       i++;
-//     }
-//   }
-// }
 
 const fetchAllClientsFromDb = async () => {
   try {

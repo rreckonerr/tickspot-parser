@@ -3,7 +3,13 @@ import { logger } from '../helpers';
 
 export default class UserCtrl {
   static async fetchAllUsers() {
-    return await User.findAll();
+    try {
+      const allDbUsers = await User.findAll();
+
+      return [null, allDbUsers];
+    } catch (error) {
+      return [error.message || error];
+    }
   }
 
   static async createUser(user, subscription_id) {
