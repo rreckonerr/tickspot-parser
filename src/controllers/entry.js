@@ -3,7 +3,13 @@ import { logger } from '../helpers';
 
 export default class EntryCtrl {
   static async fetchAllEntries() {
-    return await Entry.findAll();
+    try {
+      const allDbEntries = await Entry.findAll();
+
+      return [null, allDbEntries];
+    } catch (error) {
+      return [error.message || error];
+    }
   }
 
   static async createEntry(entry) {

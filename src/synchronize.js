@@ -150,38 +150,27 @@ const synchronizeTasks = async () => {
   }
 };
 
-const fetchAllEntriesFromDb = async () => {
-  try {
-    const entries = await EntryCtrl.fetchAllEntries();
-
-    return [null, entries];
-  } catch (error) {
-    return [
-      new Error('Failed to retreive entries from DB.', error.message || error)
-    ];
-  }
-};
-
 const synchronizeEntries = async () => {
   try {
-    const [err, sourceEntriesRaw] = await fetchAllEntriesFromDb();
+    const [err, sourceDbEntriesRaw] = await EntryCtrl.fetchAllEntries();
     if (err) {
       throw Error(`Failed to fetch all entries from DB`, err.message || err);
     }
 
-    const sourceEntries = sourceEntriesRaw.map(entry =>
+    const sourceEntries = sourceDbEntriesRaw.map(entry =>
       entry.get({ plain: true })
     );
 
-    const targetEntries = [];
-
-    for await (const targetEntry of createTargetEntries(sourceEntries)) {
-      if (targetEntry) targetEntries.push(targetEntry);
+    const [err1, targetEntries] = await TickTarget.createEntries(sourceEntries);
+    if (err1) {
+      throw Error(`Failed to create entries in target`, err1.message || err1);
     }
 
     console.log('---target-entries', targetEntries);
 
-    logger.info(`Created ${targetEntries.length} entries successfully`);
+    logger.info(
+      `Created ${targetEntries.length} of ${sourceEntries.length} entries`
+    );
 
     return [null, targetEntries];
   } catch (error) {
@@ -192,47 +181,15 @@ const synchronizeEntries = async () => {
   }
 };
 
-async function* createTargetEntries(entries) {
-  let i = 0;
-  while (i < entries.length) {
-    const sourceEntry = entries[i];
-    const { date, hours, notes, task_id, user_id } = sourceEntry;
-
-    try {
-      const entryToCreate = {
-        date,
-        hours,
-        notes,
-        // ! add target task id
-        task_id,
-        // ! add target user id
-        user_id
-      };
-
-      const [err, targetEntry] = await TickTarget.createEntry(entryToCreate);
-      if (err) throw Error(err.message || err);
-
-      yield targetEntry;
-    } catch (error) {
-      logger.error(`Failed to create target entry for ${notes}`, {
-        reason: error.message || error
-      });
-      yield undefined;
-    } finally {
-      i++;
-    }
-  }
-}
-
 const init = async () => {
   try {
     await initTickApi();
 
-    // await synchronizeUsers();
-    // await synchronizeClients();
-    // await synchronizeProjects();
+    await synchronizeUsers();
+    await synchronizeClients();
+    await synchronizeProjects();
     await synchronizeTasks();
-    // await synchronizeEntries();
+    await synchronizeEntries();
   } catch (error) {
     logger.error(`Failed to synchronize`, { reason: error.message || error });
     process.exit(1);

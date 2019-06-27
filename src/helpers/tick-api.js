@@ -361,6 +361,52 @@ class TickApi {
     }
   }
 
+  async createEntries(sourceEntries = null) {
+    try {
+      if (!sourceEntries) return [`No entries provided`];
+      const targetEntries = [];
+
+      for await (const targetEntry of this.createEntriesGen(sourceEntries)) {
+        if (targetEntry) targetEntries.push(targetEntry);
+      }
+      return [null, targetEntries];
+    } catch (error) {
+      return [error.message || error];
+    }
+  }
+
+  async *createEntriesGen(entries) {
+    let i = 0;
+    while (i < entries.length) {
+      const sourceEntry = entries[i];
+      const { date, hours, notes, task_id, user_id } = sourceEntry;
+
+      try {
+        const entryToCreate = {
+          date,
+          hours,
+          notes,
+          // ! add target task id
+          task_id,
+          // ! add target user id
+          user_id
+        };
+
+        const [err, targetEntry] = await this.createEntry(entryToCreate);
+        if (err) throw Error(err.message || err);
+
+        yield targetEntry;
+      } catch (error) {
+        logger.error(`Failed to create target entry for ${notes}`, {
+          reason: error.message || error
+        });
+        yield undefined;
+      } finally {
+        i++;
+      }
+    }
+  }
+
   async createTasks(sourceTasks = null) {
     try {
       if (!sourceTasks) return [`No tasks provided`];
