@@ -3,7 +3,12 @@ import { logger } from '../helpers';
 
 export default class PropjectCtrl {
   static async fetchAllProjects() {
-    return await Project.findAll();
+    try {
+      const allDbProjects = await Project.findAll();
+      return [null, allDbProjects];
+    } catch (error) {
+      return [error.message || error];
+    }
   }
 
   static async createProject(project, subscription_id) {

@@ -318,6 +318,112 @@ class TickApi {
     }
   }
 
+  async createClients(sourceClients = null) {
+    try {
+      if (!sourceClients) return [`No clients provided`];
+      const targetClients = [];
+      for await (const targetClient of this.createClientsGen(sourceClients)) {
+        if (targetClient) targetClients.push(targetClient);
+      }
+      return [null, targetClients];
+    } catch (error) {
+      return [error.message || error];
+    }
+  }
+
+  async *createClientsGen(clients) {
+    let i = 0;
+    while (i < clients.length) {
+      const sourceClient = clients[i];
+      const { name, archived } = sourceClient;
+
+      try {
+        const clientToCreate = {
+          name,
+          archived: archived ? archived : false
+        };
+
+        const [err, targetClient] = await this.createClient(clientToCreate);
+        if (err) throw Error(err.message || err);
+
+        yield targetClient;
+      } catch (error) {
+        logger.error(
+          `Failed to create target client for ${sourceClient.name}`,
+          {
+            reason: error.message || error
+          }
+        );
+        yield undefined;
+      } finally {
+        i++;
+      }
+    }
+  }
+
+  async createProjects(sourceProjects = null) {
+    try {
+      const targetProjects = [];
+      for await (const targetProject of this.createProjectsGen(
+        sourceProjects
+      )) {
+        if (targetProject) targetProjects.push(targetProject);
+      }
+
+      return [null, targetProjects];
+    } catch (error) {
+      return [error.message || error];
+    }
+  }
+
+  async *createProjectsGen(projects) {
+    let i = 0;
+    while (i < projects.length) {
+      try {
+        const sourceProject = projects[i];
+
+        const {
+          name,
+          budget,
+          date_closed,
+          notifications,
+          billable,
+          recurring,
+          client_id,
+          owner_id
+        } = sourceProject;
+
+        const projectToCreate = {
+          name,
+          budget,
+          date_closed,
+          notifications,
+          billable,
+          recurring,
+          // ! link to target's client id
+          client_id,
+          // ! link to target's user id
+          owner_id
+        };
+
+        const [err, targetProject] = await this.createProject(projectToCreate);
+        if (err) throw Error(err.message || error);
+
+        yield targetProject;
+      } catch (error) {
+        logger.error(
+          `Failed to create target project for ${projects[i].name}`,
+          {
+            reason: error.message || error
+          }
+        );
+        yield undefined;
+      } finally {
+        i++;
+      }
+    }
+  }
+
   async createUsers(sourceUsers = null) {
     try {
       if (!sourceUsers) return [`No users provided`];

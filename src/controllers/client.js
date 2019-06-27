@@ -3,7 +3,13 @@ import { logger } from '../helpers';
 
 export default class ClientCtrl {
   static async fetchAllClients() {
-    return await Client.findAll();
+    try {
+      const allDbClients = await Client.findAll();
+
+      return [null, allDbClients];
+    } catch (error) {
+      return [error.message || error];
+    }
   }
 
   static async createClient(client, subscription_id) {
