@@ -9,19 +9,12 @@ import {
 } from './controllers';
 
 const initTickApi = async () => {
-  const {
-    sourceLogin,
-    sourcePassword,
-    sourceUserAgent
-    // targetLogin,
-    // targetPassword,
-    // targetUserAgent
-  } = config.secrets;
+  const { targetLogin, targetPassword, targetUserAgent } = config.secrets;
 
   const [err1, targetRole] = await TickTarget.init(
-    sourceLogin,
-    sourcePassword,
-    sourceUserAgent
+    targetLogin,
+    targetPassword,
+    targetUserAgent
   );
   try {
     if (err1) throw Error(`Failed to init Tick Target`, err1.message || err1);
@@ -33,41 +26,31 @@ const initTickApi = async () => {
   return targetRole;
 };
 
-const fetchAllProjectsFromDb = async () => {
-  try {
-    const projects = await ProjectCtrl.fetchAllProjects();
-
-    return [null, projects];
-  } catch (error) {
-    logger.error(`Failed to fetch projects from db`, {
-      reason: error.message || error
-    });
-    return [error];
-  }
-};
-
 const synchronizeProjects = async () => {
   try {
-    const [err, sourceProjectsRaw] = await fetchAllProjectsFromDb();
+    const [err, sourceDbProjectsRaw] = await ProjectCtrl.fetchAllProjects();
     if (err)
       throw Error(
         'Failed to fetch all projects from DB.',
         err.message || error
       );
 
-    const sourceProjects = sourceProjectsRaw.map(project =>
+    const sourceProjects = sourceDbProjectsRaw.map(project =>
       project.get({ plain: true })
     );
 
-    const targetProjects = [];
-    for await (const targetProject of createTargetProjects(sourceProjects)) {
-      if (targetProject) targetProjects.push(targetProject);
-    }
+    const [err1, targetProjects] = await TickTarget.createProjects(
+      sourceProjects
+    );
+    if (err1)
+      throw Error(`Failed to create projects in target`, err1.message || err1);
 
     console.log('---target-projects', targetProjects);
 
     // TODO: update db with the new projects data
-    logger.info(`Created ${targetProjects.length} projects successfully`);
+    logger.info(
+      `Created ${targetProjects.length} of ${sourceProjects.length} projects`
+    );
 
     return [null, targetProjects];
   } catch (error) {
@@ -78,81 +61,21 @@ const synchronizeProjects = async () => {
   }
 };
 
-async function* createTargetProjects(projects) {
-  let i = 0;
-  while (i < projects.length) {
-    try {
-      const sourceProject = projects[i];
-
-      const {
-        name,
-        budget,
-        date_closed,
-        notifications,
-        billable,
-        recurring,
-        client_id,
-        owner_id
-      } = sourceProject;
-
-      const projectToCreate = {
-        name,
-        budget,
-        date_closed,
-        notifications,
-        billable,
-        recurring,
-        // ! link to target's client id
-        client_id,
-        // ! link to target's user id
-        owner_id
-      };
-
-      const [err, targetProject] = await TickTarget.createProject(
-        projectToCreate
-      );
-      if (err) throw Error(err.message || error);
-
-      yield targetProject;
-    } catch (error) {
-      logger.error(`Failed to create target project for ${projects[i].name}`, {
-        reason: error.message || error
-      });
-      yield undefined;
-    } finally {
-      i++;
-    }
-  }
-}
-
-const fetchAllUsersFromDb = async () => {
-  try {
-    const users = await UserCtrl.fetchAllUsers();
-
-    return [null, users];
-  } catch (error) {
-    logger.error(`Failed to fetch users from db`, {
-      reason: error.message || error
-    });
-    return [error.message || error];
-  }
-};
-
 const synchronizeUsers = async () => {
   try {
-    const [err, sourceUsersRaw] = await fetchAllUsersFromDb();
-    if (err) throw Error('Failed to fetch all users from DB');
-
-    const sourceUsers = sourceUsersRaw.map(user => user.get({ plain: true }));
-
-    const targetUsers = [];
-    for await (const targetUser of createTargetUsers(sourceUsers)) {
-      if (targetUser) targetUsers.push(targetUser);
+    const [err, sourceDbUsersRaw] = await UserCtrl.fetchAllUsers();
+    if (err) {
+      throw Error('Failed to fetch all users from DB ' + err.message || err);
     }
 
-    console.log('---target-users', targetUsers);
+    const sourceUsers = sourceDbUsersRaw.map(user => user.get({ plain: true }));
 
-    logger.info(`Created ${targetUsers.length} users successfully`);
+    const [err1, targetUsers] = await TickTarget.createUsers(sourceUsers);
+    if (err1) {
+      throw Error(`Failed to create users in target. ` + err1.message || err1);
+    }
+
+    logger.info(`Created ${targetUsers.length} of ${sourceUsers.length} users`);
     // TODO: update db with the new data.
     return [null, targetUsers];
   } catch (error) {
@@ -163,66 +86,25 @@ const synchronizeUsers = async () => {
   }
 };
 
-async function* createTargetUsers(users) {
-  let i = 0;
-  while (i < users.length) {
-    try {
-      const sourceUser = users[i];
-
-      const { first_name, last_name, email, admin, billable_rate } = sourceUser;
-
-      const userToCreate = {
-        first_name,
-        last_name,
-        email,
-        admin: Boolean(admin),
-        billable_rate
-      };
-
-      const [err, targetUser] = await TickTarget.createUser(userToCreate);
-      if (err) throw Error(err.message || error);
-
-      yield targetUser;
-    } catch (error) {
-      logger.error(`Failed to create target user for ${user[i].email}`, {
-        reason: error.message || error
-      });
-      yield undefined;
-    } finally {
-      i++;
-    }
-  }
-}
-
-const fetchAllClientsFromDb = async () => {
-  try {
-    const clients = await ClientCtrl.fetchAllClients();
-
-    return [null, clients];
-  } catch (error) {
-    return [
-      new Error('Failed to retreive clients from DB.', error.message || error)
-    ];
-  }
-};
-
 const synchronizeClients = async () => {
   try {
-    const [err, sourceClientsRaw] = await fetchAllClientsFromDb();
+    const [err, sourceDbClientsRaw] = await ClientCtrl.fetchAllClients();
     if (err)
       throw Error(`Failed to fetch all clients from DB.`, err.message || err);
 
-    const sourceClients = sourceClientsRaw.map(client =>
+    const sourceClients = sourceDbClientsRaw.map(client =>
       client.get({ plain: true })
     );
 
-    const targetClients = [];
-    for await (const targetClient of createTargetClients(sourceClients)) {
-      if (targetClient) targetClients.push(targetClient);
+    const [err1, targetClients] = await TickTarget.createClients(sourceClients);
+    if (err1) {
+      throw Error(`Failed to create clients in target`, err1.message || err1);
     }
 
     console.log('---target-clients', targetClients);
-    logger.info(`Created ${targetClients.length} clients successfully`);
+    logger.info(
+      `Created ${targetClients.length} of ${sourceClients.length} clients successfully`
+    );
 
     // ? response example
     // { id: 375015,
@@ -241,62 +123,22 @@ const synchronizeClients = async () => {
   }
 };
 
-async function* createTargetClients(clients) {
-  let i = 0;
-  while (i < clients.length) {
-    const sourceClient = clients[i];
-    const { name, archived } = sourceClient;
-
-    try {
-      const clientToCreate = {
-        name,
-        archived: archived ? archived : false
-      };
-
-      const [err, targetClient] = await TickTarget.createClient(clientToCreate);
-      if (err) throw Error(err.message || err);
-
-      yield targetClient;
-    } catch (error) {
-      logger.error(`Failed to create target client for ${sourceClient.name}`, {
-        reason: error.message || error
-      });
-      yield undefined;
-    } finally {
-      i++;
-    }
-  }
-}
-
-const fetchAllTasksFromDb = async () => {
-  try {
-    const tasks = await TaskCtrl.fetchAllTasks();
-
-    return [null, tasks];
-  } catch (error) {
-    return [
-      new Error('Failed to retrieve tasks from DB.', error.message || error)
-    ];
-  }
-};
-
 const synchronizeTasks = async () => {
   try {
-    const [err, sourceTasksRaw] = await fetchAllTasksFromDb();
+    const [err, sourceDbTasksRaw] = await TaskCtrl.fetchAllTasks();
     if (err) {
       throw Error(`Failed to fetch all tasks from DB.`, err.message || err);
     }
 
-    const sourceTasks = sourceTasksRaw.map(task => task.get({ plain: true }));
+    const sourceTasks = sourceDbTasksRaw.map(task => task.get({ plain: true }));
 
-    const targetTasks = [];
-
-    for await (const targetTask of createTargetTasks(sourceTasks)) {
-      if (targetTask) targetTasks.push(targetTask);
+    const [err1, targetTasks] = await TickTarget.createTasks(sourceTasks);
+    if (err1) {
+      throw Error(`Failed to create clients in target` + err1.message || err1);
     }
 
     console.log('---target-tasks', targetTasks);
-    logger.info(`Created ${targetTasks.length} tasks successfully`);
+    logger.info(`Created ${targetTasks.length} of ${sourceTasks.length} tasks`);
 
     // TODO: update db with the new data
     return [null, targetTasks];
@@ -308,68 +150,27 @@ const synchronizeTasks = async () => {
   }
 };
 
-async function* createTargetTasks(tasks) {
-  let i = 0;
-  while (i < tasks.length) {
-    const sourceTask = tasks[i];
-    const { name, budget, project_id, billable } = sourceTask;
-
-    try {
-      const taskToCreate = {
-        name,
-        budget,
-        // ! add real target project id
-        project_id,
-        billable: Boolean(billable)
-      };
-
-      const [err, targetTask] = await TickTarget.createTask(taskToCreate);
-      if (err) throw Error(err.message || err);
-
-      yield targetTask;
-    } catch (error) {
-      logger.error(`Failed to create target task for ${sourceTask[i].name}`, {
-        reason: error.message || error
-      });
-      yield undefined;
-    } finally {
-      i++;
-    }
-  }
-}
-
-const fetchAllEntriesFromDb = async () => {
-  try {
-    const entries = await EntryCtrl.fetchAllEntries();
-
-    return [null, entries];
-  } catch (error) {
-    return [
-      new Error('Failed to retreive entries from DB.', error.message || error)
-    ];
-  }
-};
-
 const synchronizeEntries = async () => {
   try {
-    const [err, sourceEntriesRaw] = await fetchAllEntriesFromDb();
+    const [err, sourceDbEntriesRaw] = await EntryCtrl.fetchAllEntries();
     if (err) {
       throw Error(`Failed to fetch all entries from DB`, err.message || err);
     }
 
-    const sourceEntries = sourceEntriesRaw.map(entry =>
+    const sourceEntries = sourceDbEntriesRaw.map(entry =>
       entry.get({ plain: true })
     );
 
-    const targetEntries = [];
-
-    for await (const targetEntry of createTargetEntries(sourceEntries)) {
-      if (targetEntry) targetEntries.push(targetEntry);
+    const [err1, targetEntries] = await TickTarget.createEntries(sourceEntries);
+    if (err1) {
+      throw Error(`Failed to create entries in target`, err1.message || err1);
     }
 
     console.log('---target-entries', targetEntries);
 
-    logger.info(`Created ${targetEntries.length} entries successfully`);
+    logger.info(
+      `Created ${targetEntries.length} of ${sourceEntries.length} entries`
+    );
 
     return [null, targetEntries];
   } catch (error) {
@@ -379,38 +180,6 @@ const synchronizeEntries = async () => {
     process.exit(1);
   }
 };
-
-async function* createTargetEntries(entries) {
-  let i = 0;
-  while (i < entries.length) {
-    const sourceEntry = entries[i];
-    const { date, hours, notes, task_id, user_id } = sourceEntry;
-
-    try {
-      const entryToCreate = {
-        date,
-        hours,
-        notes,
-        // ! add target task id
-        task_id,
-        // ! add target user id
-        user_id
-      };
-
-      const [err, targetEntry] = await TickTarget.createEntry(entryToCreate);
-      if (err) throw Error(err.message || err);
-
-      yield targetEntry;
-    } catch (error) {
-      logger.error(`Failed to create target entry for ${notes}`, {
-        reason: error.message || error
-      });
-      yield undefined;
-    } finally {
-      i++;
-    }
-  }
-}
 
 const init = async () => {
   try {

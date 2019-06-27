@@ -318,6 +318,254 @@ class TickApi {
     }
   }
 
+  async createClients(sourceClients = null) {
+    try {
+      if (!sourceClients) return [`No clients provided`];
+      const targetClients = [];
+      for await (const targetClient of this.createClientsGen(sourceClients)) {
+        if (targetClient) targetClients.push(targetClient);
+      }
+      return [null, targetClients];
+    } catch (error) {
+      return [error.message || error];
+    }
+  }
+
+  async *createClientsGen(clients) {
+    let i = 0;
+    while (i < clients.length) {
+      const sourceClient = clients[i];
+      const { name, archived } = sourceClient;
+
+      try {
+        const clientToCreate = {
+          name,
+          archived: archived ? archived : false
+        };
+
+        const [err, targetClient] = await this.createClient(clientToCreate);
+        if (err) throw Error(err.message || err);
+
+        yield targetClient;
+      } catch (error) {
+        logger.error(
+          `Failed to create target client for ${sourceClient.name}`,
+          {
+            reason: error.message || error
+          }
+        );
+        yield undefined;
+      } finally {
+        i++;
+      }
+    }
+  }
+
+  async createEntries(sourceEntries = null) {
+    try {
+      if (!sourceEntries) return [`No entries provided`];
+      const targetEntries = [];
+
+      for await (const targetEntry of this.createEntriesGen(sourceEntries)) {
+        if (targetEntry) targetEntries.push(targetEntry);
+      }
+      return [null, targetEntries];
+    } catch (error) {
+      return [error.message || error];
+    }
+  }
+
+  async *createEntriesGen(entries) {
+    let i = 0;
+    while (i < entries.length) {
+      const sourceEntry = entries[i];
+      const { date, hours, notes, task_id, user_id } = sourceEntry;
+
+      try {
+        const entryToCreate = {
+          date,
+          hours,
+          notes,
+          // ! add target task id
+          task_id,
+          // ! add target user id
+          user_id
+        };
+
+        const [err, targetEntry] = await this.createEntry(entryToCreate);
+        if (err) throw Error(err.message || err);
+
+        yield targetEntry;
+      } catch (error) {
+        logger.error(`Failed to create target entry for ${notes}`, {
+          reason: error.message || error
+        });
+        yield undefined;
+      } finally {
+        i++;
+      }
+    }
+  }
+
+  async createTasks(sourceTasks = null) {
+    try {
+      if (!sourceTasks) return [`No tasks provided`];
+      const targetTasks = [];
+
+      for await (const targetTask of this.createTasksGen(sourceTasks)) {
+        if (targetTask) targetTasks.push(targetTask);
+      }
+
+      return [null, targetTasks];
+    } catch (error) {
+      return [error.message || error];
+    }
+  }
+
+  async *createTasksGen(tasks) {
+    let i = 0;
+    while (i < tasks.length) {
+      const sourceTask = tasks[i];
+      const { name, budget, project_id, billable } = sourceTask;
+
+      try {
+        const taskToCreate = {
+          name,
+          budget,
+          // ! add real target project id
+          project_id,
+          billable: Boolean(billable)
+        };
+
+        const [err, targetTask] = await this.createTask(taskToCreate);
+        if (err) throw Error(err.message || err);
+
+        yield targetTask;
+      } catch (error) {
+        logger.error(`Failed to create target task for ${sourceTask[i].name}`, {
+          reason: error.message || error
+        });
+        yield undefined;
+      } finally {
+        i++;
+      }
+    }
+  }
+
+  async createProjects(sourceProjects = null) {
+    try {
+      if (!sourceProjects) return [`No projects provided`];
+      const targetProjects = [];
+      for await (const targetProject of this.createProjectsGen(
+        sourceProjects
+      )) {
+        if (targetProject) targetProjects.push(targetProject);
+      }
+
+      return [null, targetProjects];
+    } catch (error) {
+      return [error.message || error];
+    }
+  }
+
+  async *createProjectsGen(projects) {
+    let i = 0;
+    while (i < projects.length) {
+      try {
+        const sourceProject = projects[i];
+
+        const {
+          name,
+          budget,
+          date_closed,
+          notifications,
+          billable,
+          recurring,
+          client_id,
+          owner_id
+        } = sourceProject;
+
+        const projectToCreate = {
+          name,
+          budget,
+          date_closed,
+          notifications,
+          billable,
+          recurring,
+          // ! link to target's client id
+          client_id,
+          // ! link to target's user id
+          owner_id
+        };
+
+        const [err, targetProject] = await this.createProject(projectToCreate);
+        if (err) throw Error(err.message || error);
+
+        yield targetProject;
+      } catch (error) {
+        logger.error(
+          `Failed to create target project for ${projects[i].name}`,
+          {
+            reason: error.message || error
+          }
+        );
+        yield undefined;
+      } finally {
+        i++;
+      }
+    }
+  }
+
+  async createUsers(sourceUsers = null) {
+    try {
+      if (!sourceUsers) return [`No users provided`];
+      const targetUsers = [];
+      for await (const targetUser of this.createUsersGen(sourceUsers)) {
+        if (targetUser) targetUsers.push(targetUser);
+      }
+      return [null, targetUsers];
+    } catch (error) {
+      return [error.message || error];
+    }
+  }
+
+  async *createUsersGen(users) {
+    let i = 0;
+    while (i < users.length) {
+      try {
+        const sourceUser = users[i];
+
+        const {
+          first_name,
+          last_name,
+          email,
+          admin,
+          billable_rate
+        } = sourceUser;
+
+        const userToCreate = {
+          first_name,
+          last_name,
+          email,
+          admin: Boolean(admin),
+          billable_rate
+        };
+
+        const [err, targetUser] = await this.createUser(userToCreate);
+        if (err) throw Error(err.message || error);
+
+        yield targetUser;
+      } catch (error) {
+        logger.error(`Failed to create target user for ${user[i].email}`, {
+          reason: error.message || error
+        });
+        yield undefined;
+      } finally {
+        i++;
+      }
+    }
+  }
+
   async createUser(user = null) {
     if (!user) return ['No user data provided'];
 

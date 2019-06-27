@@ -3,7 +3,13 @@ import { logger } from '../helpers';
 
 export default class TaskCtrl {
   static async fetchAllTasks() {
-    return await Task.findAll();
+    try {
+      const allDbTasks = await Task.findAll();
+
+      return [null, allDbTasks];
+    } catch (error) {
+      return [error.message || error];
+    }
   }
 
   static async createTask(task) {

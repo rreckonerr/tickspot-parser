@@ -1,3 +1,4 @@
+import initialize from './initialize';
 import populate from './populate';
 import synchronize from './synchronize';
 import { logger } from './helpers';
@@ -7,6 +8,7 @@ logger.verbose('Starting the app.');
 
 const askUserForAction = async () => {
   const choices = [
+    { title: 'First start', value: 'initialize' },
     { title: 'Populate the database', value: 'populate' },
     { title: 'Synchronize the data', value: 'synchronize' }
   ];
@@ -25,15 +27,21 @@ const askUserForAction = async () => {
 
 const handler = async () => {
   const userAction = await askUserForAction();
-  // const userAction = await Promise.resolve('synchronize');
 
   switch (userAction) {
+    case 'initialize':
+      // *set init source-target relations for subscription
+      // *create files for user assosiation
+      initialize();
+      break;
     case 'populate':
       populate();
       break;
     case 'synchronize':
       synchronize();
+      break;
     default:
+      process.exit(1);
       break;
   }
 };
