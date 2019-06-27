@@ -318,6 +318,56 @@ class TickApi {
     }
   }
 
+  async createUsers(sourceUsers = null) {
+    try {
+      if (!sourceUsers) return [`No users provided`];
+      const targetUsers = [];
+      for await (const targetUser of this.createUsersGen(sourceUsers)) {
+        if (targetUser) targetUsers.push(targetUser);
+      }
+      return [null, targetUsers];
+    } catch (error) {
+      return [error.message || error];
+    }
+  }
+
+  async *createUsersGen(users) {
+    let i = 0;
+    while (i < users.length) {
+      try {
+        const sourceUser = users[i];
+
+        const {
+          first_name,
+          last_name,
+          email,
+          admin,
+          billable_rate
+        } = sourceUser;
+
+        const userToCreate = {
+          first_name,
+          last_name,
+          email,
+          admin: Boolean(admin),
+          billable_rate
+        };
+
+        const [err, targetUser] = await this.createUser(userToCreate);
+        if (err) throw Error(err.message || error);
+
+        yield targetUser;
+      } catch (error) {
+        logger.error(`Failed to create target user for ${user[i].email}`, {
+          reason: error.message || error
+        });
+        yield undefined;
+      } finally {
+        i++;
+      }
+    }
+  }
+
   async createUser(user = null) {
     if (!user) return ['No user data provided'];
 

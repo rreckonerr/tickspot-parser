@@ -134,16 +134,15 @@ const fetchAllUsersFromDb = async () => {
 const synchronizeUsers = async () => {
   try {
     const [err, sourceUsersRaw] = await fetchAllUsersFromDb();
-    if (err) throw Error('Failed to fetch all users from DB');
+    if (err)
+      throw Error('Failed to fetch all users from DB ' + err.message || err);
 
     const sourceUsers = sourceUsersRaw.map(user => user.get({ plain: true }));
 
-    const targetUsers = [];
-    for await (const targetUser of createTargetUsers(sourceUsers)) {
-      if (targetUser) targetUsers.push(targetUser);
+    const [err1, targetUsers] = await TickTarget.createUsers(sourceUsers);
+    if (err1) {
+      throw Error(`Failed to create users in target. ` + err1.message || err1);
     }
-
-    console.log('---target-users', targetUsers);
 
     logger.info(`Created ${targetUsers.length} users successfully`);
     // TODO: update db with the new data.
@@ -156,36 +155,36 @@ const synchronizeUsers = async () => {
   }
 };
 
-async function* createTargetUsers(users) {
-  let i = 0;
-  while (i < users.length) {
-    try {
-      const sourceUser = users[i];
+// async function* createTargetUsers(users) {
+//   let i = 0;
+//   while (i < users.length) {
+//     try {
+//       const sourceUser = users[i];
 
-      const { first_name, last_name, email, admin, billable_rate } = sourceUser;
+//       const { first_name, last_name, email, admin, billable_rate } = sourceUser;
 
-      const userToCreate = {
-        first_name,
-        last_name,
-        email,
-        admin: Boolean(admin),
-        billable_rate
-      };
+//       const userToCreate = {
+//         first_name,
+//         last_name,
+//         email,
+//         admin: Boolean(admin),
+//         billable_rate
+//       };
 
-      const [err, targetUser] = await TickTarget.createUser(userToCreate);
-      if (err) throw Error(err.message || error);
+//       const [err, targetUser] = await TickTarget.createUser(userToCreate);
+//       if (err) throw Error(err.message || error);
 
-      yield targetUser;
-    } catch (error) {
-      logger.error(`Failed to create target user for ${user[i].email}`, {
-        reason: error.message || error
-      });
-      yield undefined;
-    } finally {
-      i++;
-    }
-  }
-}
+//       yield targetUser;
+//     } catch (error) {
+//       logger.error(`Failed to create target user for ${user[i].email}`, {
+//         reason: error.message || error
+//       });
+//       yield undefined;
+//     } finally {
+//       i++;
+//     }
+//   }
+// }
 
 const fetchAllClientsFromDb = async () => {
   try {
@@ -410,10 +409,10 @@ const init = async () => {
     await initTickApi();
 
     await synchronizeUsers();
-    await synchronizeClients();
-    await synchronizeProjects();
-    await synchronizeTasks();
-    await synchronizeEntries();
+    // await synchronizeClients();
+    // await synchronizeProjects();
+    // await synchronizeTasks();
+    // await synchronizeEntries();
   } catch (error) {
     logger.error(`Failed to synchronize`, { reason: error.message || error });
     process.exit(1);
