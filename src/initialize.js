@@ -1,8 +1,6 @@
-import fs from 'fs';
-import { TickSource, TickTarget, logger } from './helpers';
+import { TickSource, TickTarget, logger, FileSystem } from './helpers';
 import config from './config';
 import { SubscriptionCtrl } from './controllers';
-import { reject, resolve } from 'any-promise';
 
 const getSourceRole = async () => {
   try {
@@ -61,72 +59,60 @@ const linkSubscriptions = async () => {
   }
 };
 
-async function* writeUsersToFile(fileName, users) {
-  try {
-    let i = 0;
-    while (i < users.length) {
-      const user = users[i];
-      try {
-        const userEmail = await writeUserToFile(fileName, user);
-
-        yield [null, userEmail];
-      } catch (error) {
-        yield [error, user.email];
-      } finally {
-        i++;
-      }
-    }
-  } catch (error) {
-    logger.error(`Failed to write users to a file`, {
-      reason: error.message || error
-    });
-    throw Error(error);
-  }
-}
-
-const writeUserToFile = (fileName, user) => {
-  return new Promise((resolve, reject) => {
-    if (!user) reject(new Error(`No user data provided`));
-
-    const { id, first_name, last_name, email } = user;
-
-    if (!id || !email) reject(new Error(`User id and email are required`));
-
-    const lineToAdd = `${id} | ${email} | ${first_name} | ${last_name}\n`;
-
-    fs.appendFile(fileName, lineToAdd, err => {
-      if (err) reject(new Error(err));
-      resolve(email);
-    });
-  });
-};
-
-const writeSourceUsersToFile = async () => {
+const createUserFiles = async () => {
   try {
     const [err, sourceUsers] = await TickSource.getAllUsers();
     if (err) {
-      logger.error(`Failed to get all users`, { reason: err.message || err });
+      logger.error(`Failed to get all source users`, {
+        reason: err.message || err
+      });
       throw Error(error);
     }
 
-    const fileName = 'source-users.txt';
-
-    for await (const [err, userEmail] of writeUsersToFile(
-      fileName,
-      sourceUsers
-    )) {
-      if (err) {
-        logger.error(`Failed to write source user ${userEmail} to file`, {
-          reason: err.message || err
-        });
-      } else {
-        logger.info(
-          `Source user ${userEmail} successfully added to "${fileName}"`
-        );
-      }
+    const [err2, targetUsers] = await TickTarget.getAllUsers();
+    if (err2) {
+      logger.error(`Failed to get all target users`, {
+        reason: err.message || err
+      });
+      throw Error(error);
     }
+
+    const sourceFileName = `source-users.txt`;
+    const targetFileName = `target-users.txt`;
+
+    await FileSystem.writeUsersToFile(sourceFileName, sourceUsers);
+    await FileSystem.writeUsersToFile(targetFileName, targetUsers);
   } catch (error) {
-    logger.error(`Failed to write source users to a file`, {
+    logger.error(`Failed to create files for users`, {
+      reason: error.message || error
+    });
+    console.error(error);
+    process.exit(1);
+  }
+};
+
+const linkUsers = async () => {
+  try {
+    const fileName = `link-users.txt`;
+    // TODO: add prompts to askUserToLinkEmails;
+
+    const [err, sourceUsers] = await TickSource.getAllUsers();
+    if (err) {
+      logger.error(`Failed to get all source users`, {
+        reason: err.message || err
+      });
+      throw Error(error);
+    }
+
+    // const [err2, linkedUsers] = await
+
+    // fs.readFile(filename, (err, data) => {
+    // data.split('=>').forEach(([targetId, sourceId]) => {
+    //   TickSource.createUser()
+    // })
+    // })
+  } catch (error) {
+    logger.error(`Failed to link users`, {
       reason: error.message || error
     });
     console.error(error);
@@ -138,7 +124,9 @@ const initialize = async () => {
   try {
     await linkSubscriptions();
 
-    await writeSourceUsersToFile();
+    await createUserFiles();
+
+    await linkUsers();
   } catch (error) {
     logger.error(`Failed to initialize app.`, {
       reason: error.message || error
