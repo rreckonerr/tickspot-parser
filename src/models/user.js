@@ -10,6 +10,11 @@ export default class User extends Sequelize.Model {
           primaryKey: true,
           type: DataTypes.INTEGER
         },
+        target_id: {
+          allowNull: false,
+          unique: true,
+          type: DataTypes.INTEGER
+        },
         first_name: {
           allowNull: false,
           type: DataTypes.STRING

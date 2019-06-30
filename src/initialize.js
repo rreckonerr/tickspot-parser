@@ -157,8 +157,6 @@ const linkUsers = async () => {
       throw Error(err2);
     }
 
-    console.log('---linked-users', linkedUsers);
-
     const linkedSourceUsers = sourceUsers.map(user => {
       return {
         ...user,
@@ -166,18 +164,20 @@ const linkUsers = async () => {
       };
     });
 
-    console.log('---linked-source-users', linkedSourceUsers);
+    // TODO: ask user if to create new user if it does't exist
 
-    // const subscription_id = TickSource.getSubscriptionId();
+    const subscription_id = TickSource.getSubscriptionId();
 
-    // const [err1, dbUsers] = await UserCtrl.createUsers(
-    //   linkedSourceUsers,
-    //   subscription_id
-    // );
-    // if (err1) {
-    //   logger.error(`Failed to add linked source users to DB`);
-    //   throw Error(err1);
-    // }
+    const [err3, dbUsers] = await UserCtrl.createUsers(
+      linkedSourceUsers,
+      subscription_id
+    );
+    if (err3) {
+      logger.error(`Failed to add linked source users to DB`);
+      throw Error(err3);
+    }
+
+    console.log('---db-users', dbUsers);
   } catch (error) {
     logger.error(`Failed to link users`, {
       reason: error.message || error
