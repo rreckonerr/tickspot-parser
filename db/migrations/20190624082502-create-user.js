@@ -9,6 +9,11 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
+      target_id: {
+        allowNull: false,
+        unique: true,
+        type: Sequelize.INTEGER
+      },
       first_name: {
         allowNull: false,
         type: Sequelize.STRING

@@ -3,6 +3,7 @@
 const testUsers = [
   {
     id: 339348,
+    target_id: 123456,
     first_name: 'Volodymyr',
     last_name: 'Radchenko',
     email: 'bratko_bob@yahoo.com',
@@ -14,6 +15,7 @@ const testUsers = [
   },
   {
     id: 339349,
+    target_id: 234567,
     first_name: 'Test 1',
     last_name: 'Test 1',
     email: 'rreckonerr@gmail.com',
@@ -25,6 +27,7 @@ const testUsers = [
   },
   {
     id: 339350,
+    target_id: 345678,
     first_name: 'Test 2 ',
     last_name: 'Test 2',
     email: 'snowman.legalise@gmail.com',
@@ -36,6 +39,7 @@ const testUsers = [
   },
   {
     id: 339351,
+    target_id: 456789,
     first_name: 'random dude',
     last_name: 'dude',
     email: 'random@dude.com',

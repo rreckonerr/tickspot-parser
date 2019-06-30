@@ -8,6 +8,10 @@ module.exports = {
         unique: true,
         type: Sequelize.INTEGER
       },
+      target_id: {
+        allowNull: false,
+        type: Sequelize.INTEGER
+      },
       company: {
         allowNull: false,
         type: Sequelize.STRING

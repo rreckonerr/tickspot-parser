@@ -639,6 +639,7 @@ class TickApi {
 
   async getAllUsers() {
     try {
+      if (this.users) return [null, this.users];
       const users = [];
       try {
         for await (let usersRaw of this.usersGen()) {
