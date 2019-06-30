@@ -10,3 +10,6 @@ yarn-error.log*
 
 combined.log
 error.log
+link-users.txt
+source-users.txt
+target-users.txt
